@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://craftychimera.github.io/posts/linux/syzkaller/</loc>
+    <lastmod>2025-11-20T14:45:35+05:30</lastmod>
+  </url><url>
+    <loc>https://craftychimera.github.io/posts/linux/</loc>
+    <lastmod>2025-11-20T14:45:35+05:30</lastmod>
+  </url><url>
+    <loc>https://craftychimera.github.io/</loc>
+    <lastmod>2025-11-20T14:45:35+05:30</lastmod>
+  </url><url>
+    <loc>https://craftychimera.github.io/posts/</loc>
+    <lastmod>2025-11-20T14:45:35+05:30</lastmod>
+  </url><url>
+    <loc>https://craftychimera.github.io/posts/linux/linux_upstream/</loc>
+    <lastmod>2025-11-17T11:50:00+05:30</lastmod>
+  </url><url>
+    <loc>https://craftychimera.github.io/posts/linux/git_basics/</loc>
+    <lastmod>2025-09-10T11:46:57+05:30</lastmod>
+  </url><url>
+    <loc>https://craftychimera.github.io/about/</loc>
+  </url><url>
+    <loc>https://craftychimera.github.io/categories/</loc>
+  </url><url>
+    <loc>https://craftychimera.github.io/tags/</loc>
+  </url>
+</urlset>

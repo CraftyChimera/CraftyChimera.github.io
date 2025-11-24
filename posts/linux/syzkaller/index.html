@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="dark">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Fixing a Syzkaller Bug in an Ancient Linux Network Driver | Portfolio</title>
+<meta name="keywords" content="">
+<meta name="description" content="Introduction
+As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by
+Google&rsquo;s kernel fuzzer syzkaller.
+I picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard.
+This naturally turned out to be a async race monster.
+The silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.">
+<meta name="author" content="">
+<link rel="canonical" href="https://craftychimera.github.io/posts/linux/syzkaller/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.381f2c6843b28da8454ae291f64a45a8b239486456ac64a400ac43b398f8defe.css" integrity="sha256-OB8saEOyjahFSuKR9kpFqLI5SGRWrGSkAKxDs5j43v4=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://craftychimera.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://craftychimera.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://craftychimera.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://craftychimera.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://craftychimera.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://craftychimera.github.io/posts/linux/syzkaller/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "light") {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script><meta property="og:url" content="https://craftychimera.github.io/posts/linux/syzkaller/">
+  <meta property="og:site_name" content="Portfolio">
+  <meta property="og:title" content="Fixing a Syzkaller Bug in an Ancient Linux Network Driver">
+  <meta property="og:description" content="Introduction As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by Google’s kernel fuzzer syzkaller.
+I picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard. This naturally turned out to be a async race monster.
+The silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-11-20T14:45:35+05:30">
+    <meta property="article:modified_time" content="2025-11-20T14:45:35+05:30">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Fixing a Syzkaller Bug in an Ancient Linux Network Driver">
+<meta name="twitter:description" content="Introduction
+As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by
+Google&rsquo;s kernel fuzzer syzkaller.
+I picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard.
+This naturally turned out to be a async race monster.
+The silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://craftychimera.github.io/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Linux",
+      "item": "https://craftychimera.github.io/posts/linux/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "Fixing a Syzkaller Bug in an Ancient Linux Network Driver",
+      "item": "https://craftychimera.github.io/posts/linux/syzkaller/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Fixing a Syzkaller Bug in an Ancient Linux Network Driver",
+  "name": "Fixing a Syzkaller Bug in an Ancient Linux Network Driver",
+  "description": "Introduction As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by Google\u0026rsquo;s kernel fuzzer syzkaller.\nI picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard. This naturally turned out to be a async race monster.\nThe silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "Introduction As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by Google’s kernel fuzzer syzkaller.\nI picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard. This naturally turned out to be a async race monster.\nThe silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.\nThat’s exactly what I am going to talk about in the rest of the article.\nSolving the bug Pass 1 The USB part Looking at the dashboard, the first thing that should come to your mind is that the USB core is involved here. Looking at the crash report, you can identify a URB was submitted while active. The natural question is ofc ‘What the heck is a URB’?\nURB stands for USB Request Block and we can read about it here. It’s basically the complete execution context required for one USB transaction.\nURBs are filled by the caller and passed to the USB core which will use this URB to execute the corresponding USB transaction. URBs can be reused after the completion handler finishes execution. Here’s what that looks like in our case\nIf you look at the code you can see that the driver maintains just one urb (tx_urb) for start_xmit throughout its lifetime. The bug is therefore caused by reusing that URB TOO early, i.e. before an ongoing tx is complete.\nWith that context in mind, let’s look at the same bug in other drivers to gain an idea of what we are looking for.\nAttempt 1 I decided to search through fixed bugs using the search term “Submit Urb”. It turns out most of the bugs of form WARNING in x_submit_urb are errors caused by improper endpoint checking.\nBut eventually, I found this bug by searching for “submit_urb” in the Fixed bugs page that looked similar to our problem. I somehow convinced myself the problem was in the TX timeout handler.\nMy line of reasoning was that usb_unlink_urb() did not kill the URB as mentioned here:\nSo, I tried replacing usb_link_urb with usb_kill_urb and checked if it fixed the bug.\nIt did not in fact fix the bug.\nPass 2 Since that did not work out, I decided to attempt to predict when the crash happens. What I learnt is that the crash is utterly unpredictable. Sometimes it happened in 30 seconds. Other times, it took 30-45 minutes.\nSince that seemed hopeless, I decided to add print statements in all the functions that seemed relevant. These were\n- rtl8150_start_xmit() - rtl8150_open() - rtl8150_close() This was not very useful. However, Around this point of time, I started to find netif_action_queue functions suspicious. Intuitively, they start/stop/resume the TX packet queue. I thought rtl8150_set_multicast() was suspicious but this was a stretch.\nI decided to add prints inside them.\nAha — Here’s the pattern we are looking for. Whenever the crash happens, A call to rtl8150_set_multicast() is always present just before the call.\nAnd whenever the call is not present, there’s no crash.\nTherefore, that function is the key to this bug. So, Let’s look at the code\nWell, we aren’t ready yet; We need to understand TX flow in net to make complete sense of the bug.\nThe net part The TX flow technically begins at send(), when userspace hands data to the kernel. But for the sake of brevity, we skip the socket and protocol-stack processing and jump directly to the point where packets are handed to the device layer: dev_hard_start_xmit().\nAfter enough processing, the control flow looks like this:\nsend() ... dev_hard_start_xmit() xmit_one() netdev_start_xmit() __netdev_start_xmit() ops-\u003endo_start_xmit() Eventually, we reach dev_hard_start_xmit() in the control flow which invokes the driver implementation of ndo_start_xmit callback.\nIf you inspect this call chain, one thing stands out: none of these functions enforce TX flow control themselves. This is by design. This part is left to the drivers.\ndev_hard_start_xmit() just pushes the packets it receives, one at a time, to the lower layers and checks if the TX flow has been stopped. If so, it doesn’t push any more packets.\nThe actual TX flow happens in the driver specific callback ndo_start_xmit(). In addition to processing and transmitting TX, the callback is responsible for TX flow control which depends on device capabilities and the current hardware state. This TX flow is done by using the following functions:\nnetif_stop_queue(dev) – tells the core to stop sending new packets / stops the TX queue\nnetif_wake_queue(dev) – tells the core to resume sending / wakes up the TX queue\nnetif_start_queue(dev) – used for initial activation / starts the TX queue.\nGiven this information, let’s go back to our problem child.\nAttempt 2 Looking at rtl8150_set_multicast() and logs again:\nWe see that rtl8150_set_multicast() prematurely wakes up the TX queue before the rtl8150_start_xmit() finishes processing the request. This makes absolutely no sense as the set_rx_mode() callback has no business with TX queues.\nThis is the reconstructed sequence of events:\n// CPU0 (in rtl8150_start_xmit) CPU1 (in rtl8150_start_xmit) CPU2 (in rtl8150_set_multicast) netif_stop_queue(); netif_stop_queue(); usb_submit_urb(); netif_wake_queue(); \u003c-- Wakes up TX queue before it is ready netif_stop_queue(); usb_submit_urb(); \u003c-- Warning URB Completion With this in mind, the fix is removing those disruptive calls from the set_rx_mode callback. This is what I did and it fixed the bug.\nMailing the patch An Expected Beginning Solving the bug is just one part of the picture; the patch should withstand scrutiny from maintainers and reviewers. Here’s the v1 I submitted\nI expected a response in about a week or so considering how slow kernel development is. To my (pleasant) surprise, it was 8 hrs. This made me learn that net is actually a very fast moving subsystem. The response was\nYikes, That’s something I forgot to take into account. Thankfully the Network Devices, the Kernel, and You! page clarifies this\nThe rx mode synchronization is handled entirely by netif_addr_lock(). I replied with this explanation and Andrew accepted it and told me to incorporate this into the commit message in v2. Here’s the v2.\nAn Unexpected Development I was expecting comments on my patch. What I was not expecting was this.\nI forgot to mention this driver is from the pre Git era. This is probably a reasonable response for a driver for a legacy device that was supposed to be done 20 years ago.\nPanicking a bit, I prepared and mailed a patch to delete the driver here. This broke build and thankfully, I did not have to correct it.\nTesting Turns out, Testing with syzkaller was insufficient, which explains Jakub’s response. Thankfully, Michal Pecio had a rtl8150 and volunteered to test the patch.\nHe triggered the bug by running:\n# This is instantly triggered on HW simply by running: ncat remote-host port \u003c /dev/zero \u0026 ifconfig ethX allmulti Michal pointed out that my original description was unnecessarily complex. The following event sequence is sufficient to trigger the bug:\nrtl8150_start_xmit() { netif_stop_queue(); usb_submit_urb(dev-\u003etx_urb); } rtl8150_set_multicast() { netif_stop_queue(); netif_wake_queue(); // \u003c-- wakes up TX queue before URB is done } rtl8150_start_xmit() { netif_stop_queue(); usb_submit_urb(dev-\u003etx_urb); //\t\u003c-- double submission } and that my patch stopped the bug from triggering.\nTaking all these into account, I submitted v3 here\nI got an ACK from Petko Manolov, the maintainer of this driver, after everything settled down.\nv3 got applied into netdev/net.git (main) and eventually ended up in mainline.\nThe commit is 958baf5eaee3 (“net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast”)\nClosing Remarks That was an experience. Afrer all this settled down, I decided to go back and have a look at a reply that seemed interesting to me\nI am currently working on this at the moment and Jakub seems to be fine with me implementing it so far.\nOnce again, I would like to reiterate that this was an invaluable experience in debugging, kernel development, and upstream submission.\nThanks for Reading.\n",
+  "wordCount" : "1320",
+  "inLanguage": "en",
+  "datePublished": "2025-11-20T14:45:35+05:30",
+  "dateModified": "2025-11-20T14:45:35+05:30",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://craftychimera.github.io/posts/linux/syzkaller/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Portfolio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://craftychimera.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://craftychimera.github.io/" accesskey="h" title="Portfolio (Alt + H)">Portfolio</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://craftychimera.github.io/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://craftychimera.github.io/about" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://craftychimera.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://craftychimera.github.io/posts/">Posts</a>&nbsp;»&nbsp;<a href="https://craftychimera.github.io/posts/linux/">Linux</a></div>
+    <h1 class="post-title entry-hint-parent">
+      Fixing a Syzkaller Bug in an Ancient Linux Network Driver
+    </h1>
+    <div class="post-meta"><span title='2025-11-20 14:45:35 +0530 IST'>20/11/2025</span>&nbsp;·&nbsp;<span>7 min</span>&nbsp;·&nbsp;<span>1320 words</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#introduction" aria-label="Introduction">Introduction</a></li>
+                <li>
+                    <a href="#solving-the-bug" aria-label="Solving the bug">Solving the bug</a><ul>
+                        
+                <li>
+                    <a href="#pass-1" aria-label="Pass 1">Pass 1</a><ul>
+                        
+                <li>
+                    <a href="#the-usb-part" aria-label="The USB part">The USB part</a></li>
+                <li>
+                    <a href="#attempt-1" aria-label="Attempt 1">Attempt 1</a></li></ul>
+                </li>
+                <li>
+                    <a href="#pass-2" aria-label="Pass 2">Pass 2</a><ul>
+                        
+                <li>
+                    <a href="#the-net-part" aria-label="The net part">The net part</a></li>
+                <li>
+                    <a href="#attempt-2" aria-label="Attempt 2">Attempt 2</a></li></ul>
+                </li></ul>
+                </li>
+                <li>
+                    <a href="#mailing-the-patch" aria-label="Mailing the patch">Mailing the patch</a><ul>
+                        
+                <li>
+                    <a href="#an-expected-beginning" aria-label="An Expected Beginning">An Expected Beginning</a></li>
+                <li>
+                    <a href="#an-unexpected-development" aria-label="An Unexpected Development">An Unexpected Development</a></li>
+                <li>
+                    <a href="#testing" aria-label="Testing">Testing</a></li></ul>
+                </li>
+                <li>
+                    <a href="#closing-remarks" aria-label="Closing Remarks">Closing Remarks</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h1>
+<p>As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by
+Google&rsquo;s kernel fuzzer syzkaller.</p>
+<p>I picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard.
+This naturally turned out to be a async race monster.</p>
+<p>The silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.</p>
+<p>That&rsquo;s exactly what I am going to talk about in the rest of the article.</p>
+<h1 id="solving-the-bug">Solving the bug<a hidden class="anchor" aria-hidden="true" href="#solving-the-bug">#</a></h1>
+<h2 id="pass-1">Pass 1<a hidden class="anchor" aria-hidden="true" href="#pass-1">#</a></h2>
+<h3 id="the-usb-part">The USB part<a hidden class="anchor" aria-hidden="true" href="#the-usb-part">#</a></h3>
+<p>Looking at the <a href="https://syzkaller.appspot.com./bug?extid=78cae3f37c62ad092caa">dashboard</a>, the first thing that should come to
+your mind is that the USB core is involved here. Looking at the crash report, you can identify a URB was submitted
+while active. The natural question is ofc &lsquo;What the heck is a URB&rsquo;?</p>
+<p>URB stands for USB Request Block and we can read about it <a href="https://docs.kernel.org/driver-api/usb/URB.html">here</a>. It&rsquo;s basically
+the complete execution context required for one USB transaction.</p>
+<p>URBs are filled by the caller and passed to the USB core which will use this URB to execute the corresponding USB transaction.
+URBs can be reused after the completion handler finishes execution. Here&rsquo;s what that looks like in our case</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/fill_urb.png"></p>
+<p>If you look at the code you can see that the driver maintains just one urb (tx_urb) for start_xmit throughout its lifetime. The bug
+is therefore caused by reusing that URB <em>TOO</em> early, i.e. before an ongoing tx is complete.</p>
+<p>With that context in mind, let&rsquo;s look at the same bug in other drivers to gain an idea of what we are looking for.</p>
+<h3 id="attempt-1">Attempt 1<a hidden class="anchor" aria-hidden="true" href="#attempt-1">#</a></h3>
+<p>I decided to search through fixed bugs using the search term &ldquo;Submit Urb&rdquo;. It turns out most of the bugs of form
+WARNING in x_submit_urb are errors caused by improper endpoint checking.</p>
+<p>But eventually, I found this <a href="https://syzkaller.appspot.com./bug?extid=e87ebe0f7913f71f2ea5">bug</a> by searching for &ldquo;submit_urb&rdquo; in the Fixed bugs page that looked similar to our problem. I somehow convinced myself the problem was in the TX timeout handler.</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/tx_timeout.png"></p>
+<p>My line of reasoning was that usb_unlink_urb() did not kill the URB as mentioned here:</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/kill_urb.png"></p>
+<p>So, I tried replacing <code>usb_link_urb</code> with <code>usb_kill_urb</code> and checked if it fixed the bug.</p>
+<p>It did not in fact fix the bug.</p>
+<h2 id="pass-2">Pass 2<a hidden class="anchor" aria-hidden="true" href="#pass-2">#</a></h2>
+<p>Since that did not work out, I decided to attempt to predict when the crash happens. What I learnt is that the crash is utterly
+unpredictable. Sometimes it happened in 30 seconds. Other times, it took 30-45 minutes.</p>
+<p>Since that seemed hopeless, I decided to add print statements in all the functions that seemed relevant. These were</p>
+<pre tabindex="0"><code>- rtl8150_start_xmit()
+- rtl8150_open()
+- rtl8150_close()
+</code></pre><p>This was not very useful. However, Around this point of time, I started to find netif_<em>action</em>_queue functions suspicious. Intuitively, they start/stop/resume the TX packet queue. I thought <code>rtl8150_set_multicast()</code> was suspicious but this was a stretch.</p>
+<p>I decided to add prints inside them.</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/logs.png"></p>
+<p>Aha — Here&rsquo;s the pattern we are looking for. Whenever the crash happens, A call to <code>rtl8150_set_multicast()</code> is always present just before the call.</p>
+<p>And whenever the call is not present, there&rsquo;s no crash.</p>
+<p>Therefore, that function is the key to this bug. So, Let&rsquo;s look at the code</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/set_rx_mode.png"></p>
+<p>Well, we aren&rsquo;t ready yet; We need to understand TX flow in net to make complete sense of the bug.</p>
+<h3 id="the-net-part">The net part<a hidden class="anchor" aria-hidden="true" href="#the-net-part">#</a></h3>
+<p>The TX flow technically begins at <code>send()</code>, when userspace hands data to the kernel. But for the sake of brevity, we skip the socket and protocol-stack processing and jump directly to the point where packets are handed to the device layer: <code>dev_hard_start_xmit()</code>.</p>
+<p>After enough processing, the control flow looks like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#a6e22e">send</span>()
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">dev_hard_start_xmit</span>()
+</span></span><span style="display:flex;"><span>           <span style="color:#a6e22e">xmit_one</span>()
+</span></span><span style="display:flex;"><span>               <span style="color:#a6e22e">netdev_start_xmit</span>()
+</span></span><span style="display:flex;"><span>                   <span style="color:#a6e22e">__netdev_start_xmit</span>()
+</span></span><span style="display:flex;"><span>                       ops<span style="color:#f92672">-&gt;</span><span style="color:#a6e22e">ndo_start_xmit</span>()
+</span></span></code></pre></div><p>Eventually, we reach <code>dev_hard_start_xmit()</code> in the control flow which invokes the driver implementation of ndo_start_xmit callback.</p>
+<p>If you inspect this call chain, one thing stands out: <strong>none</strong> of these functions enforce TX flow control themselves. This is by design. This part is left to the drivers.</p>
+<p><code>dev_hard_start_xmit()</code> just pushes the packets it receives, one at a time, to the lower layers and checks if the TX flow has been stopped. If so, it doesn&rsquo;t push any more packets.</p>
+<p>The actual TX flow happens in the driver specific callback <code>ndo_start_xmit()</code>. In addition to processing and transmitting TX, the callback is responsible
+for TX flow control which depends on device capabilities and the current hardware state. This TX flow is done by using the following functions:</p>
+<ul>
+<li>
+<p><code>netif_stop_queue(dev)</code> – tells the core to stop sending new packets / stops the TX queue</p>
+</li>
+<li>
+<p><code>netif_wake_queue(dev)</code> – tells the core to resume sending / wakes up the TX queue</p>
+</li>
+<li>
+<p><code>netif_start_queue(dev)</code> – used for initial activation / starts the TX queue.</p>
+</li>
+</ul>
+<p>Given this information, let&rsquo;s go back to our problem child.</p>
+<h3 id="attempt-2">Attempt 2<a hidden class="anchor" aria-hidden="true" href="#attempt-2">#</a></h3>
+<p>Looking at <code>rtl8150_set_multicast()</code> and logs again:</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/logs.png"></p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/set_rx_mode.png"></p>
+<p>We see that <code>rtl8150_set_multicast()</code> <em>prematurely</em> wakes up the TX queue before the <code>rtl8150_start_xmit()</code> finishes processing the request. This makes absolutely no sense as the <code>set_rx_mode()</code> callback has no business with TX queues.</p>
+<p>This is the reconstructed sequence of events:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">//  CPU0 (in rtl8150_start_xmit)    CPU1 (in rtl8150_start_xmit)    CPU2 (in rtl8150_set_multicast)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">netif_stop_queue</span>();
+</span></span><span style="display:flex;"><span>                                                                    <span style="color:#a6e22e">netif_stop_queue</span>();
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">usb_submit_urb</span>();
+</span></span><span style="display:flex;"><span>                                                                    <span style="color:#a6e22e">netif_wake_queue</span>();  <span style="color:#f92672">&lt;--</span> Wakes up TX queue before it is ready
+</span></span><span style="display:flex;"><span>                                    <span style="color:#a6e22e">netif_stop_queue</span>();
+</span></span><span style="display:flex;"><span>                                    <span style="color:#a6e22e">usb_submit_urb</span>();                                    <span style="color:#f92672">&lt;--</span> Warning
+</span></span><span style="display:flex;"><span>	URB Completion
+</span></span></code></pre></div><p>With this in mind, the fix is removing those <em>disruptive</em> calls from the set_rx_mode callback. This is what I did and it fixed the bug.</p>
+<h1 id="mailing-the-patch">Mailing the patch<a hidden class="anchor" aria-hidden="true" href="#mailing-the-patch">#</a></h1>
+<h2 id="an-expected-beginning">An Expected Beginning<a hidden class="anchor" aria-hidden="true" href="#an-expected-beginning">#</a></h2>
+<p>Solving the bug is just one part of the picture; the patch should withstand scrutiny from maintainers and reviewers. <a href="https://lore.kernel.org/netdev/20250920045059.48400-1-viswanathiyyappan@gmail.com/">Here</a>&rsquo;s the v1 I submitted</p>
+<p>I expected a response in about a week or so considering how slow kernel development is. To my (pleasant) surprise, it was 8 hrs. This made me learn that net is actually a <em>very fast moving</em> subsystem. The response was</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/reply.png"></p>
+<p>Yikes, That&rsquo;s something I forgot to take into account. Thankfully the <code>Network Devices, the Kernel, and You!</code> page clarifies this</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/rx_mode_sync.png"></p>
+<p>The rx mode synchronization is handled entirely by <code>netif_addr_lock()</code>. I replied with this explanation and Andrew accepted it and told me to incorporate
+this into the commit message in v2. <a href="https://lore.kernel.org/netdev/20250920181852.18164-1-viswanathiyyappan@gmail.com/#t">Here</a>&rsquo;s the v2.</p>
+<h2 id="an-unexpected-development">An Unexpected Development<a hidden class="anchor" aria-hidden="true" href="#an-unexpected-development">#</a></h2>
+<p>I was expecting comments on my patch. What I was not expecting was <a href="https://lore.kernel.org/netdev/20250922180742.6ef6e2d5@kernel.org/">this</a>.</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/delete.png"></p>
+<p>I forgot to mention this driver is from the pre Git era. This is probably a reasonable response for a driver for a legacy device that was supposed to be done 20 years ago.</p>
+<p>Panicking a bit, I prepared and mailed a patch to delete the driver <a href="https://lore.kernel.org/netdev/20250923164916.5b8c7c28@kernel.org/">here</a>. This broke
+build and thankfully, I did not have to correct it.</p>
+<h2 id="testing">Testing<a hidden class="anchor" aria-hidden="true" href="#testing">#</a></h2>
+<p>Turns out, Testing with syzkaller was insufficient, which explains Jakub&rsquo;s response. Thankfully, Michal Pecio had a rtl8150 and volunteered to test the patch.</p>
+<p>He triggered the bug by running:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># This is instantly triggered on HW simply by running:</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ncat remote-host port &lt; /dev/zero &amp;
+</span></span><span style="display:flex;"><span>ifconfig ethX allmulti
+</span></span></code></pre></div><p>Michal pointed out that my original description was unnecessarily complex. The following event sequence is sufficient to trigger the bug:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#a6e22e">rtl8150_start_xmit</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">netif_stop_queue</span>();
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">usb_submit_urb</span>(dev<span style="color:#f92672">-&gt;</span>tx_urb);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rtl8150_set_multicast</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">netif_stop_queue</span>();
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">netif_wake_queue</span>();  <span style="color:#75715e">// &lt;-- wakes up TX queue before URB is done
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rtl8150_start_xmit</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">netif_stop_queue</span>();
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">usb_submit_urb</span>(dev<span style="color:#f92672">-&gt;</span>tx_urb); <span style="color:#75715e">//	&lt;-- double submission
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span></code></pre></div><p>and that my patch stopped the bug from triggering.</p>
+<p>Taking all these into account, I submitted v3 <a href="https://lore.kernel.org/netdev/20250924134350.264597-1-viswanathiyyappan@gmail.com/">here</a></p>
+<p>I got an ACK from Petko Manolov, the maintainer of this driver, after everything settled down.</p>
+<p>v3 got applied into netdev/net.git (main) and eventually ended up in mainline.</p>
+<p>The commit is 958baf5eaee3 (&ldquo;net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast&rdquo;)</p>
+<h1 id="closing-remarks">Closing Remarks<a hidden class="anchor" aria-hidden="true" href="#closing-remarks">#</a></h1>
+<p>That was an experience. Afrer all this settled down, I decided to go back and have a look at a <a href="https://lore.kernel.org/netdev/20250923163727.5e97abdb@kernel.org/">reply</a> that seemed interesting to me</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/rx_mode_refactor.png"></p>
+<p>I am currently working on this at the moment and Jakub seems to be fine with me implementing <a href="https://lore.kernel.org/netdev/20251030192018.28dcd830@kernel.org/">it</a> so far.</p>
+<p>Once again, I would like to reiterate that this was an invaluable experience in debugging, kernel development, and upstream submission.</p>
+<p>Thanks for Reading.</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://craftychimera.github.io/">Portfolio</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

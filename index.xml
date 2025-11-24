@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Portfolio</title>
+    <link>https://craftychimera.github.io/</link>
+    <description>Recent content on Portfolio</description>
+    <generator>Hugo -- 0.152.2</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 20 Nov 2025 14:45:35 +0530</lastBuildDate>
+    <atom:link href="https://craftychimera.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Fixing a Syzkaller Bug in an Ancient Linux Network Driver</title>
+      <link>https://craftychimera.github.io/posts/linux/syzkaller/</link>
+      <pubDate>Thu, 20 Nov 2025 14:45:35 +0530</pubDate>
+      <guid>https://craftychimera.github.io/posts/linux/syzkaller/</guid>
+      <description>&lt;h1 id=&#34;introduction&#34;&gt;Introduction&lt;/h1&gt;
+&lt;p&gt;As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by
+Google&amp;rsquo;s kernel fuzzer syzkaller.&lt;/p&gt;
+&lt;p&gt;I picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard.
+This naturally turned out to be a async race monster.&lt;/p&gt;
+&lt;p&gt;The silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>How I Upstreamed My First Linux Kernel Patch</title>
+      <link>https://craftychimera.github.io/posts/linux/linux_upstream/</link>
+      <pubDate>Mon, 17 Nov 2025 11:50:00 +0530</pubDate>
+      <guid>https://craftychimera.github.io/posts/linux/linux_upstream/</guid>
+      <description>&lt;p&gt;Everything and Everyone wants in on open source these days — maybe you do too.
+This article is my attempt at articulating how I upstreamed my first kernel patch.&lt;/p&gt;
+&lt;p&gt;Let’s get started with a bit of background.&lt;/p&gt;
+&lt;h1 id=&#34;background&#34;&gt;Background&lt;/h1&gt;
+&lt;p&gt;I was writing a driver for work and I wanted to use &lt;a href=&#34;https://elixir.bootlin.com/linux/latest/source/drivers/i2c/i2c-core-base.c#L2279&#34;&gt;i2c_transfer&lt;/a&gt;
+in a function to write some data on an I2C bus.&lt;/p&gt;
+&lt;p&gt;In brief, that function gets a handle to an I2C bus and executes the commands specified in msgs. Therefore, the struct &lt;a href=&#34;https://elixir.bootlin.com/linux/v6.15.6/source/include/uapi/linux/i2c.h#L73&#34;&gt;i2c_msg struct&lt;/a&gt; should specify if the command is a read or a write.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>A Basic Introduction to Git</title>
+      <link>https://craftychimera.github.io/posts/linux/git_basics/</link>
+      <pubDate>Wed, 10 Sep 2025 11:46:57 +0530</pubDate>
+      <guid>https://craftychimera.github.io/posts/linux/git_basics/</guid>
+      <description>&lt;p&gt;If you have ever dreaded ‘breaking the build,’ &lt;strong&gt;Git&lt;/strong&gt; is the safety net you never knew you needed — or another version control system (VCS), but this article is written with Git in mind.&lt;/p&gt;
+&lt;p&gt;While many Git tutorials exist, I try to do something a bit different - so I hope this article offers a fresh perspective. It may not be intuitive why version control systems are important, so let&amp;rsquo;s start with that.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

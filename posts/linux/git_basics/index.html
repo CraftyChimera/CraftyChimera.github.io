@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="dark">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>A Basic Introduction to Git | Portfolio</title>
+<meta name="keywords" content="">
+<meta name="description" content="If you have ever dreaded ‘breaking the build,’ Git is the safety net you never knew you needed — or another version control system (VCS), but this article is written with Git in mind.
+While many Git tutorials exist, I try to do something a bit different - so I hope this article offers a fresh perspective. It may not be intuitive why version control systems are important, so let&rsquo;s start with that.">
+<meta name="author" content="">
+<link rel="canonical" href="https://craftychimera.github.io/posts/linux/git_basics/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.381f2c6843b28da8454ae291f64a45a8b239486456ac64a400ac43b398f8defe.css" integrity="sha256-OB8saEOyjahFSuKR9kpFqLI5SGRWrGSkAKxDs5j43v4=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://craftychimera.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://craftychimera.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://craftychimera.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://craftychimera.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://craftychimera.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://craftychimera.github.io/posts/linux/git_basics/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "light") {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script><meta property="og:url" content="https://craftychimera.github.io/posts/linux/git_basics/">
+  <meta property="og:site_name" content="Portfolio">
+  <meta property="og:title" content="A Basic Introduction to Git">
+  <meta property="og:description" content="If you have ever dreaded ‘breaking the build,’ Git is the safety net you never knew you needed — or another version control system (VCS), but this article is written with Git in mind.
+While many Git tutorials exist, I try to do something a bit different - so I hope this article offers a fresh perspective. It may not be intuitive why version control systems are important, so let’s start with that.">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-09-10T11:46:57+05:30">
+    <meta property="article:modified_time" content="2025-09-10T11:46:57+05:30">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="A Basic Introduction to Git">
+<meta name="twitter:description" content="If you have ever dreaded ‘breaking the build,’ Git is the safety net you never knew you needed — or another version control system (VCS), but this article is written with Git in mind.
+While many Git tutorials exist, I try to do something a bit different - so I hope this article offers a fresh perspective. It may not be intuitive why version control systems are important, so let&rsquo;s start with that.">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://craftychimera.github.io/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Linux",
+      "item": "https://craftychimera.github.io/posts/linux/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "A Basic Introduction to Git",
+      "item": "https://craftychimera.github.io/posts/linux/git_basics/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "A Basic Introduction to Git",
+  "name": "A Basic Introduction to Git",
+  "description": "If you have ever dreaded ‘breaking the build,’ Git is the safety net you never knew you needed — or another version control system (VCS), but this article is written with Git in mind.\nWhile many Git tutorials exist, I try to do something a bit different - so I hope this article offers a fresh perspective. It may not be intuitive why version control systems are important, so let\u0026rsquo;s start with that.\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "If you have ever dreaded ‘breaking the build,’ Git is the safety net you never knew you needed — or another version control system (VCS), but this article is written with Git in mind.\nWhile many Git tutorials exist, I try to do something a bit different - so I hope this article offers a fresh perspective. It may not be intuitive why version control systems are important, so let’s start with that.\nMotivation Let’s attempt to solve the following problem:\nDefine a snapshot as a version of the codebase that users may want to revisit.\nGiven the assumption that the changes between snapshots are not too drastic, how would you ensure that:\nAll the snapshots are stored in a space efficient manner. You can revisit any previous snapshot, i.e. move backward from a later snapshot m to an earlier one n. You can advance to a more recent snapshot, i.e. move forward from an earlier snapshot m to a later one n. Naive Approach Store all the snapshots in full. This approach does not scale well.\nA More Calculated Approach Let’s focus on the first problem for now. A much better approach is to store the initial snapshot and then only the changes between all the snapshots. This is more efficient because of the assumption that changes between snapshots are not too drastic.\nFor convenience, let’s define a format called patch to store the differences between two consecutive snapshots and patch application as applying the changes contained in it.\nWith these definitions in mind, this approach can be represented by the following diagram:\nNote that this also solves Problem 3: We can obtain Snapshot n from Snapshot m, where m \u003c n, by applying patches m+1..n.\nFor example, we can obtain Snapshot 2 from Snapshot 0 by applying patches 1 and 2 as shown below:\nNow, that leaves us with Problem 2. We can modify our current solution by making sure the patches store the changes in a reversible format, i.e., we can reverse the changes.\nThis approach is represented by:\nIf we call reversing the changes contained in a patch as applying a rpatch (shorthand for reverse patch, not official terminology), this solves Problem 2 as follows: We can obtain Snapshot n from Snapshot m, where m \u003e n, by applying rpatches n..m+1.\nFor example, Let’s say we are at Snapshot 3 and we want to go back to Snapshot 1, the flow would look like this:\nThis is the classic VCS solution. There are some significant downsides with this approach, such as patch chain application being slow for sufficiently many snapshots. So Git does a little optimization trick: Instead of always storing patches, it stores complete copies of small enough files.\nFor larger files or repositories with many versions, Git optimizes storage by using delta compression, which is basically the patch mechanism, but with a few caveats.\nThe assumption that changes between versions are not too drastic is important for Git’s efficiency. This makes Git less ideal for situations where files change significantly between versions, such as with large binary files.\nNow that we understand how snapshots and patches work, let’s look at the structure of a Git repository.\nStructure of a Git Repository A Git repository just refers to a codebase that uses Git. In Git terminology, our snapshots are called commits, each described by a commit message. Git divides modified files into the following areas:\nStaging Area:\nThe staging area contains changes that have been staged to be included in your next commit. This is implemented via the Git index.\nWorking Area:\nThe working area contains all the files in your project as they currently exist on disk, including unmodified files, modified but unstaged files, and untracked files. For our convenience, we will treat untracked files as a separate category and exclude them from our definition of the working area moving forward.\nUntracked Area:\nNot an official Git term, but refers to all newly added files that have never been part of Git’s history. These files are officially called untracked files.\nThese are the commands used to move files between the various areas:\n1. git add This moves modified and untracked files to the staging area. It’s straightforward but powerful.\ngit add {FILEPATH}/{FILE} # Stage a single file git add {DIRPATH} # Stage all files in a directory 2. git restore This reverts modified files to their committed version and does nothing for untracked files.\nWith the --staged flag, it moves modified files from the staging area back to the working area, unstaging them. For untracked files that were staged, it reverts them back to the untracked area, i.e., changes them back to be untracked files.\ngit restore [FLAGS] {FILEPATH}/{FILE} # Restore a file to the latest commit git restore [FLAGS] {DIRPATH} # Restore all files in a directory git restore [FLAGS] --staged {FILEPATH}/{FILE} # Unstage a file 3. git clean Removes files and directories in the untracked area. Use\n-n for a dry run (see what would be removed), -i for interactive prompts, -f to actually delete files. git clean [FLAGS] [UNTRACKED_FILES_PATH] 4. git commit Finalizes your staged changes by recording them in a new commit. By default, this opens your configured text editor for a commit message.\nUse the -m flag to provide a message directly from the command line:\ngit commit # Opens your configured text editor for entering the commit message git commit -m \"Your commit message\" # Uses \"Your commit message\" directly Note: Ignoring Files There are files you’ll never want to commit (e.g., build outputs, temporary files). To ensure they’re always ignored, add their patterns to a .gitignore file in your repository and commit this file. Git will recognize these files as ignored and prevent them from being staged or committed, helping you keep your repository clean.\nThe following diagram summarizes this section:\nGit branches Let’s say you want to work on multiple orthogonal features at the same time. You will quickly figure out this is not very convenient with just one sequence of commits.\nFor example, consider the situation where one of the commits for one feature is faulty. How would you remove just this commit, without drastically impacting other features that depend on it? The natural solution is to maintain a separate sequence of commits for each feature. This is what git branch implements.\nNote that these series of commits have a common component — the sequence of commits before the split. We can think of the common component as a “trunk” and the diverging series of commits forming “branches”, hence the terminology. There’s a special authoritative branch called main, which is what other branches get consolidated with.\nCredits to https://www.atlassian.com/git/tutorials/using-branches for the image.\nThese are the commands related to branching:\ngit branch # Lists all the current branches git branch branch-name # Creates branch-name git branch -D branch-name # Deletes branch-name git checkout branch-name # Switches to branch-name git switch -c branch-name # Newer command for switching After switching to a new branch, the process of adding new commits to this branch is exactly the same. At some point, you would finish implementing your feature and want to consolidate your changes with main.\nThere are two ways of doing this: merge and rebase. The difference between the two is subtle; merge preserves the branches in Git history, while rebase rewrites history to seem like the branches never existed.\nIn practice, this means that after a branch gets rebased, you are forced to work with a new copy of the commit. Therefore, you should never rebase shared branches. In the case of a merge, you can revisit and modify the original commit. Merge also creates an extra commit called a merge commit, which describes the merged commits.\nIn the process of consolidation, there would be changes that cannot be resolved automatically. These changes are called merge conflicts, and should be dealt with human intervention and much care.\nCredits to https://www.atlassian.com/git/tutorials/merging-vs-rebasing for the images.\nMerge Rebase Git remote Up to this point, we have been thinking of Git on a local system. But well, Git was designed to work with the Internet. This is where Git remotes come in.\nYou can add Git repositories on remote systems as Git remotes. You can then pull changes from branches in this remote repo or push your changes to the appropriate branch in the remote. These are the relevant commands:\n1. git remote add This adds a remote repository with the name as the provided argument\ngit remote add origin # you can now use `origin` to refer to remote-url 2. git clone This allows you to clone a remote repo onto your local machine\ngit clone # Copies remote url to your local machine and sets it up as origin 3. git pull This does two things. First, it fetches the changes from the appropriate remote branch, and then it does merge or rebase based on the flags.\ngit pull origin # Fetches and merges changes from remote branch git pull --rebase origin # Fetches and rebases changes from remote branch 4. git push This allows you to push your changes to the remote URL. Note that this requires the local branch to be in sync with the remote branch; otherwise, the push would be rejected. There’s a very dangerous flag --force, that would overwrite the remote repo. Use it with much caution.\ngit push origin : # Pushes your changes from local branch to origin/remote-branch git push origin branch # Pushes changes from branch to origin/branch git push --force origin branch # Overwrites the history in origin/branch We have covered all the things that I believe are essential to Git. For further reading, please consult Atlassian Git Tutorials and Git documentation\n",
+  "wordCount" : "1626",
+  "inLanguage": "en",
+  "datePublished": "2025-09-10T11:46:57+05:30",
+  "dateModified": "2025-09-10T11:46:57+05:30",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://craftychimera.github.io/posts/linux/git_basics/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Portfolio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://craftychimera.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://craftychimera.github.io/" accesskey="h" title="Portfolio (Alt + H)">Portfolio</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://craftychimera.github.io/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://craftychimera.github.io/about" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://craftychimera.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://craftychimera.github.io/posts/">Posts</a>&nbsp;»&nbsp;<a href="https://craftychimera.github.io/posts/linux/">Linux</a></div>
+    <h1 class="post-title entry-hint-parent">
+      A Basic Introduction to Git
+    </h1>
+    <div class="post-meta"><span title='2025-09-10 11:46:57 +0530 IST'>10/09/2025</span>&nbsp;·&nbsp;<span>8 min</span>&nbsp;·&nbsp;<span>1626 words</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#motivation" aria-label="Motivation">Motivation</a><ul>
+                        
+                <li>
+                    <a href="#naive-approach" aria-label="Naive Approach">Naive Approach</a></li>
+                <li>
+                    <a href="#a-more-calculated-approach" aria-label="A More Calculated Approach">A More Calculated Approach</a></li></ul>
+                </li>
+                <li>
+                    <a href="#structure-of-a-git-repository" aria-label="Structure of a Git Repository">Structure of a Git Repository</a><ul>
+                        <ul>
+                        
+                <li>
+                    <a href="#1-git-add" aria-label="1. git add">1. git add</a></li>
+                <li>
+                    <a href="#2-git-restore" aria-label="2. git restore">2. git restore</a></li>
+                <li>
+                    <a href="#3-git-clean" aria-label="3. git clean">3. git clean</a></li>
+                <li>
+                    <a href="#4-git-commit" aria-label="4. git commit">4. git commit</a></li>
+                <li>
+                    <a href="#note-ignoring-files" aria-label="Note: Ignoring Files">Note: Ignoring Files</a></li></ul>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#git-branches" aria-label="Git branches">Git branches</a><ul>
+                        
+                <li>
+                    <a href="#merge" aria-label="Merge">Merge</a></li>
+                <li>
+                    <a href="#rebase" aria-label="Rebase">Rebase</a></li></ul>
+                </li>
+                <li>
+                    <a href="#git-remote" aria-label="Git remote">Git remote</a><ul>
+                        <ul>
+                        
+                <li>
+                    <a href="#1-git-remote-add" aria-label="1. git remote add">1. git remote add</a></li>
+                <li>
+                    <a href="#2-git-clone" aria-label="2. git clone">2. git clone</a></li>
+                <li>
+                    <a href="#3-git-pull" aria-label="3. git pull">3. git pull</a></li>
+                <li>
+                    <a href="#4-git-push" aria-label="4. git push">4. git push</a>
+                </li>
+            </ul>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><p>If you have ever dreaded ‘breaking the build,’ <strong>Git</strong> is the safety net you never knew you needed — or another version control system (VCS), but this article is written with Git in mind.</p>
+<p>While many Git tutorials exist, I try to do something a bit different - so I hope this article offers a fresh perspective. It may not be intuitive why version control systems are important, so let&rsquo;s start with that.</p>
+<hr>
+<h1 id="motivation">Motivation<a hidden class="anchor" aria-hidden="true" href="#motivation">#</a></h1>
+<p>Let&rsquo;s attempt to solve the following problem:</p>
+<p>Define a <strong>snapshot</strong> as a version of the codebase that users may want to revisit.</p>
+<p>Given the assumption that the changes between snapshots are not too drastic, how would you ensure that:</p>
+<ol>
+<li>All the snapshots are stored in a space efficient manner.</li>
+<li>You can revisit any previous snapshot, i.e. move backward from a later snapshot <em>m</em> to an earlier one <em>n</em>.</li>
+<li>You can advance to a more recent snapshot, i.e. move forward from an earlier snapshot <em>m</em> to a later one <em>n</em>.</li>
+</ol>
+<h2 id="naive-approach">Naive Approach<a hidden class="anchor" aria-hidden="true" href="#naive-approach">#</a></h2>
+<p>Store all the snapshots in full. This approach does not scale well.</p>
+<h2 id="a-more-calculated-approach">A More Calculated Approach<a hidden class="anchor" aria-hidden="true" href="#a-more-calculated-approach">#</a></h2>
+<p>Let&rsquo;s focus on the first problem for now. A much better approach is to store the initial snapshot and then only the changes between all the snapshots. This is more efficient because of the assumption that changes between snapshots are not too drastic.</p>
+<p>For convenience, let&rsquo;s define a format called patch to store the differences between two consecutive snapshots and patch application as applying the changes contained in it.</p>
+<p>With these definitions in mind, this approach can be represented by the following diagram:</p>
+<p><img alt="Diagram showing snapshots and patches in version control" loading="lazy" src="/blog/git_basics/snapshots.png"></p>
+<p>Note that this also solves Problem 3: We can obtain Snapshot <em>n</em> from Snapshot <em>m</em>, where <em>m</em> &lt; <em>n</em>, by applying patches <code>m+1..n</code>.</p>
+<p>For example, we can obtain Snapshot 2 from Snapshot 0 by applying patches 1 and 2 as shown below:</p>
+<p><img alt="Diagram showing patch application from Snapshot 0 to 2" loading="lazy" src="/blog/git_basics/snapshots_0_2.png"></p>
+<p>Now, that leaves us with Problem 2. We can modify our current solution by making sure the patches store the changes in a reversible format, i.e., we can reverse the changes.</p>
+<p>This approach is represented by:</p>
+<p><img alt="Diagram showing reversible patches (rpatches)" loading="lazy" src="/blog/git_basics/snapshots_final.png"></p>
+<p>If we call reversing the changes contained in a patch as applying a <strong>rpatch</strong> (shorthand for reverse patch, not official terminology), this solves Problem 2 as follows: We can obtain Snapshot <em>n</em> from Snapshot <em>m</em>, where <em>m</em> &gt; <em>n</em>, by applying rpatches n..m+1.</p>
+<p>For example, Let&rsquo;s say we are at Snapshot 3 and we want to go back to Snapshot 1, the flow would look like this:</p>
+<p><img alt="Diagram showing patch reversal from Snapshot 3 to 1" loading="lazy" src="/blog/git_basics/snapshots_3_1.png"></p>
+<p>This is the classic VCS solution. There are some significant downsides with this approach, such as patch chain application being slow for sufficiently many snapshots. So Git does a little optimization trick: Instead of always storing patches, it stores complete copies of small enough files.</p>
+<p>For larger files or repositories with many versions, Git optimizes storage by using delta compression, which is basically the patch mechanism, but with a few caveats.</p>
+<p>The assumption that changes between versions are not too drastic is important for Git’s efficiency. This makes Git less ideal for situations where files change significantly between versions, such as with large binary files.</p>
+<p>Now that we understand how snapshots and patches work, let’s look at the structure of a Git repository.</p>
+<hr>
+<h1 id="structure-of-a-git-repository">Structure of a Git Repository<a hidden class="anchor" aria-hidden="true" href="#structure-of-a-git-repository">#</a></h1>
+<p>A <strong>Git repository</strong> just refers to a codebase that uses Git. In Git terminology, our snapshots are called <strong>commits</strong>, each described by a commit message. Git divides modified files into the following areas:</p>
+<ol>
+<li>
+<p><strong>Staging Area:</strong><br>
+The staging area contains changes that have been staged to be included in your next commit. This is implemented via the Git index.</p>
+</li>
+<li>
+<p><strong>Working Area:</strong><br>
+The working area contains all the files in your project as they currently exist on disk, including unmodified files, modified but unstaged files, and untracked files. For our convenience, we will treat untracked files as a separate category and exclude them from our definition of the working area moving forward.</p>
+</li>
+<li>
+<p><strong>Untracked Area:</strong><br>
+<em>Not an official Git term</em>, but refers to all newly added files that have never been part of Git&rsquo;s history. These files are officially called <strong>untracked files</strong>.</p>
+</li>
+</ol>
+<p>These are the commands used to move files between the various areas:</p>
+<h3 id="1-git-add">1. <code>git add</code><a hidden class="anchor" aria-hidden="true" href="#1-git-add">#</a></h3>
+<p>This moves modified and untracked files to the staging area. It&rsquo;s straightforward but powerful.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git add <span style="color:#f92672">{</span>FILEPATH<span style="color:#f92672">}</span>/<span style="color:#f92672">{</span>FILE<span style="color:#f92672">}</span>   <span style="color:#75715e"># Stage a single file</span>
+</span></span><span style="display:flex;"><span>git add <span style="color:#f92672">{</span>DIRPATH<span style="color:#f92672">}</span>           <span style="color:#75715e"># Stage all files in a directory</span>
+</span></span></code></pre></div><h3 id="2-git-restore">2. <code>git restore</code><a hidden class="anchor" aria-hidden="true" href="#2-git-restore">#</a></h3>
+<p>This reverts modified files to their committed version and does nothing for untracked files.</p>
+<p>With the <code>--staged</code> flag, it moves modified files from the staging area back to the working area, unstaging them. For untracked files that were staged, it reverts them back to the untracked area, i.e., changes them back to be untracked files.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git restore <span style="color:#f92672">[</span>FLAGS<span style="color:#f92672">]</span> <span style="color:#f92672">{</span>FILEPATH<span style="color:#f92672">}</span>/<span style="color:#f92672">{</span>FILE<span style="color:#f92672">}</span>           <span style="color:#75715e"># Restore a file to the latest commit</span>
+</span></span><span style="display:flex;"><span>git restore <span style="color:#f92672">[</span>FLAGS<span style="color:#f92672">]</span> <span style="color:#f92672">{</span>DIRPATH<span style="color:#f92672">}</span>                   <span style="color:#75715e"># Restore all files in a directory</span>
+</span></span><span style="display:flex;"><span>git restore <span style="color:#f92672">[</span>FLAGS<span style="color:#f92672">]</span> --staged <span style="color:#f92672">{</span>FILEPATH<span style="color:#f92672">}</span>/<span style="color:#f92672">{</span>FILE<span style="color:#f92672">}</span>  <span style="color:#75715e"># Unstage a file</span>
+</span></span></code></pre></div><h3 id="3-git-clean">3. <code>git clean</code><a hidden class="anchor" aria-hidden="true" href="#3-git-clean">#</a></h3>
+<p>Removes files and directories in the untracked area. Use</p>
+<ul>
+<li><code>-n</code> for a dry run (see what would be removed),</li>
+<li><code>-i</code> for interactive prompts,</li>
+<li><code>-f</code> to actually delete files.</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git clean <span style="color:#f92672">[</span>FLAGS<span style="color:#f92672">]</span> <span style="color:#f92672">[</span>UNTRACKED_FILES_PATH<span style="color:#f92672">]</span>
+</span></span></code></pre></div><h3 id="4-git-commit">4. <code>git commit</code><a hidden class="anchor" aria-hidden="true" href="#4-git-commit">#</a></h3>
+<p>Finalizes your staged changes by recording them in a new commit. By default, this opens your configured text editor for a commit message.</p>
+<p>Use the <code>-m</code> flag to provide a message directly from the command line:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git commit <span style="color:#75715e"># Opens your configured text editor for entering the commit message</span>
+</span></span><span style="display:flex;"><span>git commit -m <span style="color:#e6db74">&#34;Your commit message&#34;</span> <span style="color:#75715e"># Uses &#34;Your commit message&#34; directly </span>
+</span></span></code></pre></div><h3 id="note-ignoring-files">Note: Ignoring Files<a hidden class="anchor" aria-hidden="true" href="#note-ignoring-files">#</a></h3>
+<p>There are files you’ll never want to commit (e.g., build outputs, temporary files). To ensure they’re always ignored, add their patterns to a .gitignore file in your repository and commit this file. Git will recognize these files as ignored and prevent them from being staged or committed, helping you keep your repository clean.</p>
+<p>The following diagram summarizes this section:</p>
+<p><img alt="Diagram of Git repository structure: untracked, staging, and working areas" loading="lazy" src="/blog/git_basics/git_structure.png"></p>
+<hr>
+<h1 id="git-branches">Git branches<a hidden class="anchor" aria-hidden="true" href="#git-branches">#</a></h1>
+<p>Let&rsquo;s say you want to work on multiple orthogonal features at the same time. You will quickly figure out this is not very convenient with just one sequence of commits.</p>
+<p>For example, consider the situation where one of the commits for one feature is faulty. How would you remove just this commit, without drastically impacting other features that depend on it? The natural solution is to maintain a separate sequence of commits for each feature. This is what <strong>git branch</strong> implements.</p>
+<p>Note that these series of commits have a common component — the sequence of commits before the split. We can think of the common component as a &ldquo;trunk&rdquo; and the diverging series of commits forming &ldquo;branches&rdquo;, hence the terminology. There&rsquo;s a special authoritative branch called main, which is what other branches get consolidated with.</p>
+<p>Credits to <a href="https://www.atlassian.com/git/tutorials/using-branches">https://www.atlassian.com/git/tutorials/using-branches</a> for the image.</p>
+<p><img alt="Diagram showing branching from a trunk in Git" loading="lazy" src="/blog/git_basics/git_branch.png"></p>
+<p>These are the commands related to branching:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git branch                  <span style="color:#75715e"># Lists all the current branches</span>
+</span></span><span style="display:flex;"><span>git branch branch-name      <span style="color:#75715e"># Creates branch-name</span>
+</span></span><span style="display:flex;"><span>git branch -D branch-name   <span style="color:#75715e"># Deletes branch-name</span>
+</span></span><span style="display:flex;"><span>git checkout branch-name    <span style="color:#75715e"># Switches to branch-name</span>
+</span></span><span style="display:flex;"><span>git switch -c branch-name   <span style="color:#75715e"># Newer command for switching</span>
+</span></span></code></pre></div><p>After switching to a new branch, the process of adding new commits to this branch is exactly the same. At some point, you would finish implementing your feature and want to consolidate your changes with <strong>main</strong>.</p>
+<p>There are two ways of doing this: <strong>merge</strong> and <strong>rebase</strong>. The difference between the two is subtle; merge preserves the branches in Git history, while rebase rewrites history to seem like the branches never existed.</p>
+<p>In practice, this means that after a branch gets rebased, you are forced to work with a new copy of the commit. Therefore, you should never rebase shared branches. In the case of a merge, you can revisit and modify the original commit. Merge also creates an extra commit called a merge commit, which describes the merged commits.</p>
+<p>In the process of consolidation, there would be changes that cannot be resolved automatically. These changes are called merge conflicts, and should be dealt with human intervention and much care.</p>
+<p>Credits to <a href="https://www.atlassian.com/git/tutorials/merging-vs-rebasing">https://www.atlassian.com/git/tutorials/merging-vs-rebasing</a> for the images.</p>
+<h2 id="merge">Merge<a hidden class="anchor" aria-hidden="true" href="#merge">#</a></h2>
+<p><img alt="Diagram showing a merge in Git" loading="lazy" src="/blog/git_basics/git_merge.png"></p>
+<h2 id="rebase">Rebase<a hidden class="anchor" aria-hidden="true" href="#rebase">#</a></h2>
+<p><img alt="Diagram showing a rebase in Git" loading="lazy" src="/blog/git_basics/git_rebase.png"></p>
+<hr>
+<h1 id="git-remote">Git remote<a hidden class="anchor" aria-hidden="true" href="#git-remote">#</a></h1>
+<p>Up to this point, we have been thinking of Git on a local system. But well, Git was designed to work with the Internet. This is where Git remotes come in.</p>
+<p>You can add Git repositories on remote systems as Git remotes. You can then pull changes from branches in this remote repo or push your changes to the appropriate branch in the remote. These are the relevant commands:</p>
+<h3 id="1-git-remote-add">1. <code>git remote add</code><a hidden class="anchor" aria-hidden="true" href="#1-git-remote-add">#</a></h3>
+<p>This adds a remote repository with the name as the provided argument</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git remote add origin &lt;remote-url&gt; <span style="color:#75715e"># you can now use `origin` to refer to remote-url</span>
+</span></span></code></pre></div><h3 id="2-git-clone">2. <code>git clone</code><a hidden class="anchor" aria-hidden="true" href="#2-git-clone">#</a></h3>
+<p>This allows you to clone a remote repo onto your local machine</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git clone &lt;remote-url&gt; <span style="color:#75715e"># Copies remote url to your local machine and sets it up as origin</span>
+</span></span></code></pre></div><h3 id="3-git-pull">3. <code>git pull</code><a hidden class="anchor" aria-hidden="true" href="#3-git-pull">#</a></h3>
+<p>This does two things. First, it fetches the changes from the appropriate remote branch, and then it does merge or rebase based on the flags.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git pull origin &lt;remote-branch&gt;            <span style="color:#75715e"># Fetches and merges changes from remote branch</span>
+</span></span><span style="display:flex;"><span>git pull --rebase origin &lt;remote-branch&gt;   <span style="color:#75715e"># Fetches and rebases changes from remote branch</span>
+</span></span></code></pre></div><h3 id="4-git-push">4. <code>git push</code><a hidden class="anchor" aria-hidden="true" href="#4-git-push">#</a></h3>
+<p>This allows you to push your changes to the remote URL. Note that this requires the local branch to be in sync with the remote branch; otherwise, the push would be rejected. There&rsquo;s a very dangerous flag <code>--force</code>, that would overwrite the remote repo. Use it with much caution.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git push origin &lt;local-branch&gt;:&lt;remote-branch&gt; <span style="color:#75715e"># Pushes your changes from local branch to origin/remote-branch</span>
+</span></span><span style="display:flex;"><span>git push origin branch                         <span style="color:#75715e"># Pushes changes from branch to origin/branch</span>
+</span></span><span style="display:flex;"><span>git push --force origin branch                 <span style="color:#75715e"># Overwrites the history in origin/branch</span>
+</span></span></code></pre></div><p>We have covered all the things that I believe are essential to Git. For further reading, please consult <a href="https://www.atlassian.com/git/tutorials">Atlassian Git Tutorials</a> and <a href="https://git-scm.com/doc">Git documentation</a></p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://craftychimera.github.io/">Portfolio</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

@@ -5,17 +5,12 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
-<title>Fixing a Syzkaller Bug in an Ancient Linux Network Driver | Portfolio</title>
+<title>Fixing a Syzkaller Bug in an Ancient Driver | I, Viswanath</title>
 <meta name="keywords" content="">
-<meta name="description" content="Introduction
-As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by
-Google&rsquo;s kernel fuzzer syzkaller.
-I picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard.
-This naturally turned out to be a async race monster.
-The silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.">
+<meta name="description" content="Ancient Bug">
 <meta name="author" content="">
 <link rel="canonical" href="https://craftychimera.github.io/posts/linux/syzkaller/">
-<link crossorigin="anonymous" href="/assets/css/stylesheet.381f2c6843b28da8454ae291f64a45a8b239486456ac64a400ac43b398f8defe.css" integrity="sha256-OB8saEOyjahFSuKR9kpFqLI5SGRWrGSkAKxDs5j43v4=" rel="preload stylesheet" as="style">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.b0b9301770f49c72c41b6279c27b94ff5cbe85fceade5425e75ef5b9a274a0f7.css" integrity="sha256-sLkwF3D0nHLEG2J5wnuU/1y&#43;hfzq3lQl5171uaJ0oPc=" rel="preload stylesheet" as="style">
 <link rel="icon" href="https://craftychimera.github.io/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="https://craftychimera.github.io/favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="https://craftychimera.github.io/favicon-32x32.png">
@@ -38,25 +33,28 @@ The silver lining was that this forced me to learn a lot about a networking stac
         document.querySelector("html").dataset.theme = 'light';
     }
 
-</script><meta property="og:url" content="https://craftychimera.github.io/posts/linux/syzkaller/">
-  <meta property="og:site_name" content="Portfolio">
-  <meta property="og:title" content="Fixing a Syzkaller Bug in an Ancient Linux Network Driver">
-  <meta property="og:description" content="Introduction As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by Google’s kernel fuzzer syzkaller.
-I picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard. This naturally turned out to be a async race monster.
-The silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.">
+</script>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FHRESGH30H"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FHRESGH30H');
+</script>
+<meta property="og:url" content="https://craftychimera.github.io/posts/linux/syzkaller/">
+  <meta property="og:site_name" content="I, Viswanath">
+  <meta property="og:title" content="Fixing a Syzkaller Bug in an Ancient Driver">
+  <meta property="og:description" content="Ancient Bug">
   <meta property="og:locale" content="en-us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="posts">
     <meta property="article:published_time" content="2025-11-20T14:45:35+05:30">
     <meta property="article:modified_time" content="2025-11-20T14:45:35+05:30">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Fixing a Syzkaller Bug in an Ancient Linux Network Driver">
-<meta name="twitter:description" content="Introduction
-As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by
-Google&rsquo;s kernel fuzzer syzkaller.
-I picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard.
-This naturally turned out to be a async race monster.
-The silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.">
+<meta name="twitter:title" content="Fixing a Syzkaller Bug in an Ancient Driver">
+<meta name="twitter:description" content="Ancient Bug">
 
 
 <script type="application/ld+json">
@@ -79,7 +77,7 @@ The silver lining was that this forced me to learn a lot about a networking stac
     {
       "@type": "ListItem",
       "position":  3 ,
-      "name": "Fixing a Syzkaller Bug in an Ancient Linux Network Driver",
+      "name": "Fixing a Syzkaller Bug in an Ancient Driver",
       "item": "https://craftychimera.github.io/posts/linux/syzkaller/"
     }
   ]
@@ -89,14 +87,14 @@ The silver lining was that this forced me to learn a lot about a networking stac
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "Fixing a Syzkaller Bug in an Ancient Linux Network Driver",
-  "name": "Fixing a Syzkaller Bug in an Ancient Linux Network Driver",
-  "description": "Introduction As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by Google\u0026rsquo;s kernel fuzzer syzkaller.\nI picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard. This naturally turned out to be a async race monster.\nThe silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.\n",
+  "headline": "Fixing a Syzkaller Bug in an Ancient Driver",
+  "name": "Fixing a Syzkaller Bug in an Ancient Driver",
+  "description": "Ancient Bug",
   "keywords": [
     
   ],
-  "articleBody": "Introduction As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by Google’s kernel fuzzer syzkaller.\nI picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard. This naturally turned out to be a async race monster.\nThe silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.\nThat’s exactly what I am going to talk about in the rest of the article.\nSolving the bug Pass 1 The USB part Looking at the dashboard, the first thing that should come to your mind is that the USB core is involved here. Looking at the crash report, you can identify a URB was submitted while active. The natural question is ofc ‘What the heck is a URB’?\nURB stands for USB Request Block and we can read about it here. It’s basically the complete execution context required for one USB transaction.\nURBs are filled by the caller and passed to the USB core which will use this URB to execute the corresponding USB transaction. URBs can be reused after the completion handler finishes execution. Here’s what that looks like in our case\nIf you look at the code you can see that the driver maintains just one urb (tx_urb) for start_xmit throughout its lifetime. The bug is therefore caused by reusing that URB TOO early, i.e. before an ongoing tx is complete.\nWith that context in mind, let’s look at the same bug in other drivers to gain an idea of what we are looking for.\nAttempt 1 I decided to search through fixed bugs using the search term “Submit Urb”. It turns out most of the bugs of form WARNING in x_submit_urb are errors caused by improper endpoint checking.\nBut eventually, I found this bug by searching for “submit_urb” in the Fixed bugs page that looked similar to our problem. I somehow convinced myself the problem was in the TX timeout handler.\nMy line of reasoning was that usb_unlink_urb() did not kill the URB as mentioned here:\nSo, I tried replacing usb_link_urb with usb_kill_urb and checked if it fixed the bug.\nIt did not in fact fix the bug.\nPass 2 Since that did not work out, I decided to attempt to predict when the crash happens. What I learnt is that the crash is utterly unpredictable. Sometimes it happened in 30 seconds. Other times, it took 30-45 minutes.\nSince that seemed hopeless, I decided to add print statements in all the functions that seemed relevant. These were\n- rtl8150_start_xmit() - rtl8150_open() - rtl8150_close() This was not very useful. However, Around this point of time, I started to find netif_action_queue functions suspicious. Intuitively, they start/stop/resume the TX packet queue. I thought rtl8150_set_multicast() was suspicious but this was a stretch.\nI decided to add prints inside them.\nAha — Here’s the pattern we are looking for. Whenever the crash happens, A call to rtl8150_set_multicast() is always present just before the call.\nAnd whenever the call is not present, there’s no crash.\nTherefore, that function is the key to this bug. So, Let’s look at the code\nWell, we aren’t ready yet; We need to understand TX flow in net to make complete sense of the bug.\nThe net part The TX flow technically begins at send(), when userspace hands data to the kernel. But for the sake of brevity, we skip the socket and protocol-stack processing and jump directly to the point where packets are handed to the device layer: dev_hard_start_xmit().\nAfter enough processing, the control flow looks like this:\nsend() ... dev_hard_start_xmit() xmit_one() netdev_start_xmit() __netdev_start_xmit() ops-\u003endo_start_xmit() Eventually, we reach dev_hard_start_xmit() in the control flow which invokes the driver implementation of ndo_start_xmit callback.\nIf you inspect this call chain, one thing stands out: none of these functions enforce TX flow control themselves. This is by design. This part is left to the drivers.\ndev_hard_start_xmit() just pushes the packets it receives, one at a time, to the lower layers and checks if the TX flow has been stopped. If so, it doesn’t push any more packets.\nThe actual TX flow happens in the driver specific callback ndo_start_xmit(). In addition to processing and transmitting TX, the callback is responsible for TX flow control which depends on device capabilities and the current hardware state. This TX flow is done by using the following functions:\nnetif_stop_queue(dev) – tells the core to stop sending new packets / stops the TX queue\nnetif_wake_queue(dev) – tells the core to resume sending / wakes up the TX queue\nnetif_start_queue(dev) – used for initial activation / starts the TX queue.\nGiven this information, let’s go back to our problem child.\nAttempt 2 Looking at rtl8150_set_multicast() and logs again:\nWe see that rtl8150_set_multicast() prematurely wakes up the TX queue before the rtl8150_start_xmit() finishes processing the request. This makes absolutely no sense as the set_rx_mode() callback has no business with TX queues.\nThis is the reconstructed sequence of events:\n// CPU0 (in rtl8150_start_xmit) CPU1 (in rtl8150_start_xmit) CPU2 (in rtl8150_set_multicast) netif_stop_queue(); netif_stop_queue(); usb_submit_urb(); netif_wake_queue(); \u003c-- Wakes up TX queue before it is ready netif_stop_queue(); usb_submit_urb(); \u003c-- Warning URB Completion With this in mind, the fix is removing those disruptive calls from the set_rx_mode callback. This is what I did and it fixed the bug.\nMailing the patch An Expected Beginning Solving the bug is just one part of the picture; the patch should withstand scrutiny from maintainers and reviewers. Here’s the v1 I submitted\nI expected a response in about a week or so considering how slow kernel development is. To my (pleasant) surprise, it was 8 hrs. This made me learn that net is actually a very fast moving subsystem. The response was\nYikes, That’s something I forgot to take into account. Thankfully the Network Devices, the Kernel, and You! page clarifies this\nThe rx mode synchronization is handled entirely by netif_addr_lock(). I replied with this explanation and Andrew accepted it and told me to incorporate this into the commit message in v2. Here’s the v2.\nAn Unexpected Development I was expecting comments on my patch. What I was not expecting was this.\nI forgot to mention this driver is from the pre Git era. This is probably a reasonable response for a driver for a legacy device that was supposed to be done 20 years ago.\nPanicking a bit, I prepared and mailed a patch to delete the driver here. This broke build and thankfully, I did not have to correct it.\nTesting Turns out, Testing with syzkaller was insufficient, which explains Jakub’s response. Thankfully, Michal Pecio had a rtl8150 and volunteered to test the patch.\nHe triggered the bug by running:\n# This is instantly triggered on HW simply by running: ncat remote-host port \u003c /dev/zero \u0026 ifconfig ethX allmulti Michal pointed out that my original description was unnecessarily complex. The following event sequence is sufficient to trigger the bug:\nrtl8150_start_xmit() { netif_stop_queue(); usb_submit_urb(dev-\u003etx_urb); } rtl8150_set_multicast() { netif_stop_queue(); netif_wake_queue(); // \u003c-- wakes up TX queue before URB is done } rtl8150_start_xmit() { netif_stop_queue(); usb_submit_urb(dev-\u003etx_urb); //\t\u003c-- double submission } and that my patch stopped the bug from triggering.\nTaking all these into account, I submitted v3 here\nI got an ACK from Petko Manolov, the maintainer of this driver, after everything settled down.\nv3 got applied into netdev/net.git (main) and eventually ended up in mainline.\nThe commit is 958baf5eaee3 (“net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast”)\nClosing Remarks That was an experience. Afrer all this settled down, I decided to go back and have a look at a reply that seemed interesting to me\nI am currently working on this at the moment and Jakub seems to be fine with me implementing it so far.\nOnce again, I would like to reiterate that this was an invaluable experience in debugging, kernel development, and upstream submission.\nThanks for Reading.\n",
-  "wordCount" : "1320",
+  "articleBody": "Introduction As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by Google’s kernel fuzzer, syzkaller.\nI picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard. This naturally turned out to be a async-race monster.\nThe silver lining was that this forced me to learn a lot about the networking stack and a refactoring opportunity in net/core.\nThat’s exactly what I am going to talk about in the rest of the article.\nPrerequisites We need to know a few things before we can attempt to explain the solution. This section covers those prerequisites. Feel free to skip it if you already understand them.\nRunning a Custom Kernel If you are going to modify the linux kernel, you would want to be able to run it. Thankfully, the overall process is conceptually simple. Let’s start with the “running” part.\nTo run a modified kernel, we need two things: a disk image and a kernel image (bzImage). This assumes that we have QEMU installed, but we’ll get to that in a bit.\nThe disk image serves as the storage for our environment. You can either create one or obtain it from somewhere. If you don’t know where to start, I suggest using a Debian nocloud image, which this article assumes. Reusing the disk image provided by syzkaller for your bug also works.\nbzImage is the kernel image generated by the Linux compilation process. For x86 and x86_64, it is always generated as arch/x86/boot/bzImage.\nNow, Let’s get to QEMU.\nQEMU QEMU is a generic and open-source machine emulator and virtualizer. QEMU is a major component of most virtualization software. We will use QEMU to set up an environment suitable for testing our changes.\nThe QEMU executable differs by architecture and is usually named qemu-system-$(ARCH). For this specific bug, qemu-system-x86_64 is sufficient.\nNow that we have everything we need, we can create our instance by running:\nqemu-system-x86_64 \\ -m 2G \\ -smp 16 \\ -kernel ./bzImage -append \"root=/dev/vda1 console=ttyS0 earlyprintk=serial\" \\ -drive file=debian-12-nocloud.qcow2,format=qcow2,if=virtio \\ -nic user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:10021-:22 \\ -enable-kvm -nographic -snapshot Check the VIRTIO_ options in your .config if your instance is unable to mount the disk.\nIf you wish to use GDB to debug the crash, append -s -S to the command. This starts a GDB server instance on port 1234 and waits for kgdb to start.\nThat’s gonna be our next section.\nKernel GDB Kernel GDB works like remote GDB, except the executable you are debugging is the Linux kernel itself. After you connect to the GDB server exposed by the QEMU instance, it behaves just like regular GDB.\nThe only caveat is that you need an artifact called vmlinux to understand kernel symbols. This is generated during kernel compilation in the base directory as vmlinux.\nFor a complete description of KGDB, consult this document.\nCompiling the Custom Kernel Now that we understand the artifacts we need, we should know how to generate them.\nFirst, we need a config file. You can either copy one (recommended for syzkaller bug hunting) or generate one by running a make command depending on your needs. The most basic commands are:\n# Either make olddefconfig # make oldconfig + fills in the defaults # Or make localmodconfig # creates a config based on the current config and loaded modules Before that, clean up everything by running\nmake mrproper # Delete artifacts and old config Then build the kernel:\nmake -j$(nproc) # Runs make with $(nproc) cores This gets us the necessary artifacts.\nSyzkaller Syzkaller is Google’s kernel fuzzer, as mentioned in the intro. You can set it up on your local system by following the instructions in the repo. However, We will be using syzbot for bug hunting.\nSyzbot is a CI/CD tool built on top of syzkaller. For the exact differences, please refer to this discussion\nGoogle hosts a syzbot dashboard here. You can search for bugs per subsystem on the subsystem page.\nFor each crash of a reported bug, syzkaller provides a config, a disk image, a vmlinux, a bzImage, and a reproducer if it exists. I suggest using the artifacts from the most recent crash.\nIf a reproducer is provided, you can trigger the crash by running it. You might be wondering how QEMU emulates USB devices. For that, I suggest watching this video on the raw-gadget framework.\nThese artifacts are useful only for reviewing the code as it exists. If you change something, you need to generate your own artifacts. I suggest using the provided artifacts to check whether a bug is consistently reproducible. If it is not, consider picking a different bug — this will save time that would otherwise be wasted on a hard-to-reproduce issue.\nYou can say with reasonable confidence that a bug has been fixed if the reproducer no longer triggers the crash after your changes and if your fix makes logical sense. Depending on the bug, a real human tester may still be necessary — as was the case for this bug.\nSolving the bug This will be done in multiple passes.\nPass 1 The USB part Looking at the dashboard, the first thing that should come to your mind is that the USB core is involved here. Looking at the crash report, you can see that a URB was submitted while it was still active. The natural question is of course: What the heck is a URB?\nA URB (USB Request Block) is essentially the complete execution context required for one USB transaction. You can read more about it in the documentation here.\nA URB is filled by the caller and passed to the USB core, which then uses it to perform the corresponding USB transaction. URBs may be reused only after the completion handler finishes executing. In our case, the flow looks like this:\nwrite_bulk_callback is the completion handler here. It’s the function that will run after the URB transaction completes.\nIf you look at the driver, you’ll notice that it maintains exactly one URB (tx_urb) for start_xmit for its entire lifetime. The bug arises because this URB is being reused too early, i.e., before the ongoing TX completes.\nWith that understanding, let’s look at similar bugs in other drivers to get a sense of what to expect.\nAttempt 1 I decided to search through fixed bugs using the search term “submit_urb”. It turns out most of the bugs of form WARNING in x_submit_urb were errors caused by improper endpoint checking.\nEventually, however, I found this bug and it looked similar enough to ours. At this point, I convinced myself that the problem was in the TX timeout handler.\nMy reasoning was that usb_unlink_urb() did not kill the URB as:\nSo, I tried replacing usb_link_urb() with usb_kill_urb() and checked if it fixed the bug.\nIt did not in fact do that.\nPass 2 Since that did not work out, I decided to try predicting when the crash happens. What I learnt is that the crash is utterly unpredictable. Sometimes it happened within 30 seconds. Other times, it took 30-45 minutes.\nSince that seemed hopeless, I decided to add prints in all the functions that looked relevant. These were\nwrite_bulk_callback() rtl8150_start_xmit() rtl8150_open() rtl8150_close() This turned out to not be very useful.\nHowever, around this point of time, I started to find netif_{start/stop/wake}_queue functions suspicious. Intuitively, they start/stop/resume the TX packet queue.\nI also suspected rtl8150_set_multicast() was suspicious but this was a stretch. So, I added prints inside them.\nAha — Here’s the pattern we are looking for.\nWhenever the crash happens, a call to rtl8150_set_multicast() is always present right before it. And whenever that call is missing, there is no crash. Therefore, that function is the key to this bug.\nSo let’s look at the code.\nWell… we aren’t ready yet. We need to understand TX flow in net to make complete sense of the bug.\nThe net part The TX flow technically begins at send(), when userspace hands data to the kernel. But for brevity’s sake, we skip the socket and protocol-stack processing and jump straight to the point where packets are handed to the device layer: dev_hard_start_xmit().\nAfter enough processing, the control flow looks like this:\nsend() ... dev_hard_start_xmit() xmit_one() netdev_start_xmit() __netdev_start_xmit() ops-\u003endo_start_xmit() Eventually, we reach dev_hard_start_xmit(), which invokes the driver’s implementation of ndo_start_xmit callback.\nIf you inspect this call chain, one thing stands out: none of these functions enforce TX flow control themselves.\nThis is by design. That responsibility is left to the drivers.\ndev_hard_start_xmit() just pushes the packets one at a time to the lower layers and checks whether the TX queue has been stopped. If it has been stopped, it doesn’t push any more packets.\nThe actual TX work happens in the driver-specific ndo_start_xmit() callback. In addition to processing and transmitting packets, this callback is responsible for TX flow control, which depends on device capabilities and hardware state. TX flow control is implemented using:\nnetif_stop_queue(dev) – tells the core to stop sending new packets / stops the TX queue\nnetif_wake_queue(dev) – tells the core to resume sending / wakes up the TX queue\nnetif_start_queue(dev) – used for initial activation / starts the TX queue.\nGiven this information, let’s go back to our problem child.\nAttempt 2 Looking at rtl8150_set_multicast() and logs again:\nWe see that rtl8150_set_multicast() prematurely wakes up the TX queue before the rtl8150_start_xmit() finishes processing the request. This makes absolutely no sense as the set_rx_mode() callback has no business with TX queues.\nThis is the reconstructed sequence of events:\n// CPU0 (in rtl8150_start_xmit) CPU1 (in rtl8150_start_xmit) CPU2 (in rtl8150_set_multicast) netif_stop_queue(); netif_stop_queue(); usb_submit_urb(); netif_wake_queue(); \u003c-- Wakes up TX queue before it is ready netif_stop_queue(); usb_submit_urb(); \u003c-- Warning URB Completion With this in mind, the fix is removing those disruptive calls from the set_rx_mode callback. This is what I did and it fixed the bug.\nAfter you fix the bug locally, you should mail it to the bot that reported it to verify your patch on Google’s syzbot instance. This is what that looks like:\nMailing the patch An Expected Beginning Solving the bug is just one part of the picture; the patch should withstand scrutiny from maintainers and reviewers. Here’s the v1 I submitted\nI expected a response in about a week or so considering how slow kernel development is. To my (pleasant) surprise, it took 8 hrs. This made me realize that net is actually a very fast moving subsystem.\nThe response was\nYikes, That’s something I forgot to take into account. Thankfully the Network Devices, the Kernel, and You! page clarifies this\nThe RX mode synchronization is handled entirely by netif_addr_lock(). I replied with this explanation and Andrew accepted it and asked me to incorporate this into the commit message in v2. Here’s the v2.\nAn Unexpected Development I was expecting comments on my patch. What I was not expecting was this.\nI forgot to mention (or perhaps it was obvious from the title): this driver is from the pre Git era. This is probably a reasonable response for a legacy driver targeting a device that was supposed to be obsolete 20 years ago.\nPanicking a bit, I prepared and mailed a patch to delete the driver, linked here. This broke build, and thankfully, I didn’t have to fix it.\nTesting Turns out, testing with syzkaller was insufficient, which explains Jakub’s response. Thankfully, Michal Pecio had a rtl8150 and volunteered to test the patch.\nHe triggered the bug by running:\n# This is instantly triggered on HW simply by running: ncat remote-host port \u003c /dev/zero \u0026 ifconfig ethX allmulti Michal pointed out that my original description was unnecessarily complex. The following event sequence is sufficient to trigger the bug:\nrtl8150_start_xmit() { netif_stop_queue(); usb_submit_urb(dev-\u003etx_urb); } rtl8150_set_multicast() { netif_stop_queue(); netif_wake_queue(); // \u003c-- wakes up TX queue before URB is done } rtl8150_start_xmit() { netif_stop_queue(); usb_submit_urb(dev-\u003etx_urb); //\t\u003c-- double submission } He also confirmed that my patch prevented the bug from triggering.\nTaking this into account, I submitted v3 here\nPetko Manolov, the maintainer of this driver, ok’ed my change after everything settled down.\nv3 got applied into netdev/net.git (main) and eventually ended up in mainline.\nThe commit is 958baf5eaee3(“net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast”). You can find the metadata for this patch here.\nClosing Remarks Credits to Michal Pecio michal.pecio@gmail.com for testing this patch and Thanks to Jakub, Andrew and other netdev maintainers for being incredibly professional and helpful.\nThat was an experience. After everything settled down, I decided to go back and have a look at a reply that seemed interesting to me\nI am currently working on this at the moment and so far, Jakub seems to be fine with me implementing it.\nOnce again, I would like to reiterate that this was an invaluable experience in debugging, kernel development, and upstream submission.\nI know this article isn’t the most beginner friendly. For that, I would recommend Javier’s blog, which I found extremely invaluable.\nThanks for reading.\n",
+  "wordCount" : "2160",
   "inLanguage": "en",
   "datePublished": "2025-11-20T14:45:35+05:30",
   "dateModified": "2025-11-20T14:45:35+05:30",
@@ -106,7 +104,7 @@ The silver lining was that this forced me to learn a lot about a networking stac
   },
   "publisher": {
     "@type": "Organization",
-    "name": "Portfolio",
+    "name": "I, Viswanath",
     "logo": {
       "@type": "ImageObject",
       "url": "https://craftychimera.github.io/favicon.ico"
@@ -119,7 +117,7 @@ The silver lining was that this forced me to learn a lot about a networking stac
     <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="https://craftychimera.github.io/" accesskey="h" title="Portfolio (Alt + H)">Portfolio</a>
+            <a href="https://craftychimera.github.io/" accesskey="h" title="I, Viswanath (Alt + H)">I, Viswanath</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -163,9 +161,12 @@ The silver lining was that this forced me to learn a lot about a networking stac
   <header class="post-header">
     <div class="breadcrumbs"><a href="https://craftychimera.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://craftychimera.github.io/posts/">Posts</a>&nbsp;»&nbsp;<a href="https://craftychimera.github.io/posts/linux/">Linux</a></div>
     <h1 class="post-title entry-hint-parent">
-      Fixing a Syzkaller Bug in an Ancient Linux Network Driver
+      Fixing a Syzkaller Bug in an Ancient Driver
     </h1>
-    <div class="post-meta"><span title='2025-11-20 14:45:35 +0530 IST'>20/11/2025</span>&nbsp;·&nbsp;<span>7 min</span>&nbsp;·&nbsp;<span>1320 words</span>
+    <div class="post-description">
+      Ancient Bug
+    </div>
+    <div class="post-meta"><span title='2025-11-20 14:45:35 +0530 IST'>20/11/2025</span>&nbsp;·&nbsp;<span>11 min</span>&nbsp;·&nbsp;<span>2160 words</span>
 
 </div>
   </header> <div class="toc">
@@ -177,6 +178,22 @@ The silver lining was that this forced me to learn a lot about a networking stac
         <div class="inner"><ul>
                 <li>
                     <a href="#introduction" aria-label="Introduction">Introduction</a></li>
+                <li>
+                    <a href="#prerequisites" aria-label="Prerequisites">Prerequisites</a><ul>
+                        
+                <li>
+                    <a href="#running-a-custom-kernel" aria-label="Running a Custom Kernel">Running a Custom Kernel</a><ul>
+                        
+                <li>
+                    <a href="#qemu" aria-label="QEMU">QEMU</a></li>
+                <li>
+                    <a href="#kernel-gdb" aria-label="Kernel GDB">Kernel GDB</a></li></ul>
+                </li>
+                <li>
+                    <a href="#compiling-the-custom-kernel" aria-label="Compiling the Custom Kernel">Compiling the Custom Kernel</a></li>
+                <li>
+                    <a href="#syzkaller" aria-label="Syzkaller">Syzkaller</a></li></ul>
+                </li>
                 <li>
                     <a href="#solving-the-bug" aria-label="Solving the bug">Solving the bug</a><ul>
                         
@@ -217,51 +234,102 @@ The silver lining was that this forced me to learn a lot about a networking stac
 
   <div class="post-content"><h1 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h1>
 <p>As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by
-Google&rsquo;s kernel fuzzer syzkaller.</p>
+Google&rsquo;s kernel fuzzer, syzkaller.</p>
 <p>I picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard.
-This naturally turned out to be a async race monster.</p>
-<p>The silver lining was that this forced me to learn a lot about a networking stack and a refactoring opportunity in net/core.</p>
+This naturally turned out to be a async-race monster.</p>
+<p>The silver lining was that this forced me to learn a lot about the networking stack and a refactoring opportunity in net/core.</p>
 <p>That&rsquo;s exactly what I am going to talk about in the rest of the article.</p>
+<h1 id="prerequisites">Prerequisites<a hidden class="anchor" aria-hidden="true" href="#prerequisites">#</a></h1>
+<p>We need to know a few things before we can attempt to explain the solution. This section covers those prerequisites. Feel free to skip it if you already understand them.</p>
+<h2 id="running-a-custom-kernel">Running a Custom Kernel<a hidden class="anchor" aria-hidden="true" href="#running-a-custom-kernel">#</a></h2>
+<p>If you are going to modify the linux kernel, you would want to be able to run it. Thankfully, the overall process is conceptually simple. Let&rsquo;s start with the &ldquo;running&rdquo; part.</p>
+<p>To run a modified kernel, we need two things: a <code>disk image</code> and a <code>kernel image (bzImage)</code>. This assumes that we have QEMU installed, but we’ll get to that in a bit.</p>
+<p>The disk image serves as the storage for our environment. You can either create one or obtain it from somewhere. If you don&rsquo;t know where to start, I suggest using a Debian nocloud image, which this article assumes. Reusing the disk image provided by syzkaller for your bug also works.</p>
+<p><code>bzImage</code> is the kernel image generated by the Linux compilation process. For <code>x86</code> and <code>x86_64</code>, it is always generated as <code>arch/x86/boot/bzImage</code>.</p>
+<p>Now, Let’s get to <code>QEMU</code>.</p>
+<h3 id="qemu">QEMU<a hidden class="anchor" aria-hidden="true" href="#qemu">#</a></h3>
+<p><a href="https://www.qemu.org/">QEMU</a> is a generic and open-source machine emulator and virtualizer. <code>QEMU</code> is a major component of most virtualization software.
+We will use QEMU to set up an environment suitable for testing our changes.</p>
+<p>The <code>QEMU</code> executable differs by architecture and is usually named qemu-system-$(ARCH). For this specific bug, <code>qemu-system-x86_64</code> is sufficient.</p>
+<p>Now that we have everything we need, we can create our instance by running:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>qemu-system-x86_64 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-m 2G <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-smp <span style="color:#ae81ff">16</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-kernel ./bzImage -append <span style="color:#e6db74">&#34;root=/dev/vda1 console=ttyS0 earlyprintk=serial&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-drive file<span style="color:#f92672">=</span>debian-12-nocloud.qcow2,format<span style="color:#f92672">=</span>qcow2,if<span style="color:#f92672">=</span>virtio <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-nic user,model<span style="color:#f92672">=</span>virtio-net-pci,hostfwd<span style="color:#f92672">=</span>tcp:127.0.0.1:10021-:22 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-enable-kvm -nographic -snapshot
+</span></span></code></pre></div><p>Check the <code>VIRTIO_</code> options in your .config if your instance is unable to mount the disk.</p>
+<p>If you wish to use GDB to debug the crash, append <code>-s -S</code> to the command. This starts a GDB server instance on port 1234 and waits for <code>kgdb</code> to start.</p>
+<p>That&rsquo;s gonna be our next section.</p>
+<h3 id="kernel-gdb">Kernel GDB<a hidden class="anchor" aria-hidden="true" href="#kernel-gdb">#</a></h3>
+<p>Kernel GDB works like remote GDB, except the executable you are debugging is the Linux kernel itself. After you connect to the GDB server exposed by the <code>QEMU</code> instance, it behaves just like regular GDB.</p>
+<p>The only caveat is that you need an artifact called <code>vmlinux</code> to understand kernel symbols. This is generated during kernel compilation in the base directory as <code>vmlinux</code>.</p>
+<p>For a complete description of KGDB, consult this <a href="https://www.kernel.org/doc/Documentation/dev-tools/kgdb.rst">document</a>.</p>
+<h2 id="compiling-the-custom-kernel">Compiling the Custom Kernel<a hidden class="anchor" aria-hidden="true" href="#compiling-the-custom-kernel">#</a></h2>
+<p>Now that we understand the artifacts we need, we should know how to generate them.</p>
+<p>First, we need a config file. You can either copy one (recommended for syzkaller bug hunting) or generate one by running a <code>make</code> command depending on your needs. The most basic commands are:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Either</span>
+</span></span><span style="display:flex;"><span>make olddefconfig <span style="color:#75715e"># make oldconfig + fills in the defaults</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Or</span>
+</span></span><span style="display:flex;"><span>make localmodconfig <span style="color:#75715e"># creates a config based on the current config and loaded modules</span>
+</span></span></code></pre></div><p>Before that, clean up everything by running</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>make mrproper <span style="color:#75715e"># Delete artifacts and old config</span>
+</span></span></code></pre></div><p>Then build the kernel:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>make -j<span style="color:#66d9ef">$(</span>nproc<span style="color:#66d9ef">)</span> <span style="color:#75715e"># Runs make with $(nproc) cores</span>
+</span></span></code></pre></div><p>This gets us the necessary artifacts.</p>
+<h2 id="syzkaller">Syzkaller<a hidden class="anchor" aria-hidden="true" href="#syzkaller">#</a></h2>
+<p>Syzkaller is Google&rsquo;s kernel fuzzer, as mentioned in the intro. You can set it up on your local system by following the instructions in the <a href="https://github.com/google/syzkaller">repo</a>. However, We will be using syzbot for bug hunting.</p>
+<p>Syzbot is a CI/CD tool built on top of syzkaller. For the exact differences, please refer to this <a href="https://groups.google.com/g/syzkaller/c/O9rWGc824eU/m/2DKWhBLkCgAJ">discussion</a></p>
+<p>Google hosts a syzbot dashboard <a href="https://syzkaller.appspot.com/upstream/">here</a>. You can search for bugs per subsystem on the subsystem page.</p>
+<p>For each crash of a reported bug, syzkaller provides a <code>config</code>, a <code>disk image</code>, a <code>vmlinux</code>, a <code>bzImage</code>, and a reproducer if it exists. I suggest using the artifacts from the most recent crash.</p>
+<p>If a reproducer is provided, you can trigger the crash by running it. You might be wondering how QEMU emulates USB devices. For that, I suggest watching this <a href="https://youtu.be/AT3PQjKxa_c">video</a> on the raw-gadget framework.</p>
+<p>These artifacts are useful only for reviewing the code as it exists. If you change something, you need to generate your own artifacts. I suggest using the provided artifacts to check whether a bug is consistently reproducible. If it is not, consider picking a different bug — this will save time that would otherwise be wasted on a hard-to-reproduce issue.</p>
+<p>You can say with reasonable confidence that a bug has been fixed if the reproducer no longer triggers the crash after your changes and if your fix makes logical sense. Depending on the bug, a real human tester may still be necessary — as was the case for this bug.</p>
 <h1 id="solving-the-bug">Solving the bug<a hidden class="anchor" aria-hidden="true" href="#solving-the-bug">#</a></h1>
+<p>This will be done in multiple passes.</p>
 <h2 id="pass-1">Pass 1<a hidden class="anchor" aria-hidden="true" href="#pass-1">#</a></h2>
 <h3 id="the-usb-part">The USB part<a hidden class="anchor" aria-hidden="true" href="#the-usb-part">#</a></h3>
 <p>Looking at the <a href="https://syzkaller.appspot.com./bug?extid=78cae3f37c62ad092caa">dashboard</a>, the first thing that should come to
-your mind is that the USB core is involved here. Looking at the crash report, you can identify a URB was submitted
-while active. The natural question is ofc &lsquo;What the heck is a URB&rsquo;?</p>
-<p>URB stands for USB Request Block and we can read about it <a href="https://docs.kernel.org/driver-api/usb/URB.html">here</a>. It&rsquo;s basically
-the complete execution context required for one USB transaction.</p>
-<p>URBs are filled by the caller and passed to the USB core which will use this URB to execute the corresponding USB transaction.
-URBs can be reused after the completion handler finishes execution. Here&rsquo;s what that looks like in our case</p>
+your mind is that the USB core is involved here. Looking at the crash report, you can see that a URB was submitted
+while it was still active. The natural question is of course: <em>What the heck is a URB</em>?</p>
+<p>A URB (USB Request Block) is essentially the complete execution context required for one USB transaction. You can read more about it in the documentation <a href="https://docs.kernel.org/driver-api/usb/URB.html">here</a>.</p>
+<p>A URB is filled by the caller and passed to the USB core, which then uses it to perform the corresponding USB transaction. URBs may be reused only after the completion handler finishes executing. In our case, the flow looks like this:</p>
 <p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/fill_urb.png"></p>
-<p>If you look at the code you can see that the driver maintains just one urb (tx_urb) for start_xmit throughout its lifetime. The bug
-is therefore caused by reusing that URB <em>TOO</em> early, i.e. before an ongoing tx is complete.</p>
-<p>With that context in mind, let&rsquo;s look at the same bug in other drivers to gain an idea of what we are looking for.</p>
+<p><code>write_bulk_callback</code> is the completion handler here. It&rsquo;s the function that will run after the URB transaction completes.</p>
+<p>If you look at the driver, you’ll notice that it maintains exactly one URB (<code>tx_urb</code>) for <code>start_xmit</code> for its entire lifetime. The bug arises because this URB is being reused <em>too early</em>, i.e., before the ongoing TX completes.</p>
+<p>With that understanding, let&rsquo;s look at similar bugs in other drivers to get a sense of what to expect.</p>
 <h3 id="attempt-1">Attempt 1<a hidden class="anchor" aria-hidden="true" href="#attempt-1">#</a></h3>
-<p>I decided to search through fixed bugs using the search term &ldquo;Submit Urb&rdquo;. It turns out most of the bugs of form
-WARNING in x_submit_urb are errors caused by improper endpoint checking.</p>
-<p>But eventually, I found this <a href="https://syzkaller.appspot.com./bug?extid=e87ebe0f7913f71f2ea5">bug</a> by searching for &ldquo;submit_urb&rdquo; in the Fixed bugs page that looked similar to our problem. I somehow convinced myself the problem was in the TX timeout handler.</p>
+<p>I decided to search through fixed bugs using the search term &ldquo;submit_urb&rdquo;. It turns out most of the bugs of form
+WARNING in x_submit_urb were errors caused by improper endpoint checking.</p>
+<p>Eventually, however, I found this <a href="https://syzkaller.appspot.com./bug?extid=e87ebe0f7913f71f2ea5">bug</a> and it looked similar enough to ours. At this point, I convinced myself that the problem was in the TX timeout handler.</p>
 <p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/tx_timeout.png"></p>
-<p>My line of reasoning was that usb_unlink_urb() did not kill the URB as mentioned here:</p>
+<p>My reasoning was that <code>usb_unlink_urb()</code> did not kill the URB as:</p>
 <p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/kill_urb.png"></p>
-<p>So, I tried replacing <code>usb_link_urb</code> with <code>usb_kill_urb</code> and checked if it fixed the bug.</p>
-<p>It did not in fact fix the bug.</p>
+<p>So, I tried replacing <code>usb_link_urb()</code> with <code>usb_kill_urb()</code> and checked if it fixed the bug.</p>
+<p>It did not in fact do that.</p>
 <h2 id="pass-2">Pass 2<a hidden class="anchor" aria-hidden="true" href="#pass-2">#</a></h2>
-<p>Since that did not work out, I decided to attempt to predict when the crash happens. What I learnt is that the crash is utterly
-unpredictable. Sometimes it happened in 30 seconds. Other times, it took 30-45 minutes.</p>
-<p>Since that seemed hopeless, I decided to add print statements in all the functions that seemed relevant. These were</p>
-<pre tabindex="0"><code>- rtl8150_start_xmit()
-- rtl8150_open()
-- rtl8150_close()
-</code></pre><p>This was not very useful. However, Around this point of time, I started to find netif_<em>action</em>_queue functions suspicious. Intuitively, they start/stop/resume the TX packet queue. I thought <code>rtl8150_set_multicast()</code> was suspicious but this was a stretch.</p>
-<p>I decided to add prints inside them.</p>
+<p>Since that did not work out, I decided to try predicting <em>when</em> the crash happens. What I learnt is that the crash is utterly
+unpredictable. Sometimes it happened within 30 seconds. Other times, it took 30-45 minutes.</p>
+<p>Since that seemed hopeless, I decided to add prints in all the functions that looked relevant. These were</p>
+<ul>
+<li><code>write_bulk_callback()</code></li>
+<li><code>rtl8150_start_xmit()</code></li>
+<li><code>rtl8150_open()</code></li>
+<li><code>rtl8150_close()</code></li>
+</ul>
+<p>This turned out to not be very useful.</p>
+<p>However, around this point of time, I started to find <code>netif_{start/stop/wake}_queue</code> functions suspicious. Intuitively, they start/stop/resume the TX packet queue.</p>
+<p>I also suspected <code>rtl8150_set_multicast()</code> was suspicious but this was a stretch. So, I added prints inside them.</p>
 <p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/logs.png"></p>
-<p>Aha — Here&rsquo;s the pattern we are looking for. Whenever the crash happens, A call to <code>rtl8150_set_multicast()</code> is always present just before the call.</p>
-<p>And whenever the call is not present, there&rsquo;s no crash.</p>
-<p>Therefore, that function is the key to this bug. So, Let&rsquo;s look at the code</p>
+<p>Aha — Here&rsquo;s the pattern we are looking for.</p>
+<p>Whenever the crash happens, a call to <code>rtl8150_set_multicast()</code> is always present right before it. And whenever that call is missing, there is no crash.
+Therefore, that function is the key to this bug.</p>
+<p>So let’s look at the code.</p>
 <p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/set_rx_mode.png"></p>
-<p>Well, we aren&rsquo;t ready yet; We need to understand TX flow in net to make complete sense of the bug.</p>
+<p>Well… we aren’t ready yet. We need to understand TX flow in <code>net</code> to make complete sense of the bug.</p>
 <h3 id="the-net-part">The net part<a hidden class="anchor" aria-hidden="true" href="#the-net-part">#</a></h3>
-<p>The TX flow technically begins at <code>send()</code>, when userspace hands data to the kernel. But for the sake of brevity, we skip the socket and protocol-stack processing and jump directly to the point where packets are handed to the device layer: <code>dev_hard_start_xmit()</code>.</p>
+<p>The TX flow technically begins at <code>send()</code>, when userspace hands data to the kernel. But for brevity&rsquo;s sake, we skip the socket and protocol-stack processing and jump straight to the point where packets are handed to the device layer: <code>dev_hard_start_xmit()</code>.</p>
 <p>After enough processing, the control flow looks like this:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#a6e22e">send</span>()
 </span></span><span style="display:flex;"><span>    ...
@@ -270,11 +338,11 @@ unpredictable. Sometimes it happened in 30 seconds. Other times, it took 30-45 m
 </span></span><span style="display:flex;"><span>               <span style="color:#a6e22e">netdev_start_xmit</span>()
 </span></span><span style="display:flex;"><span>                   <span style="color:#a6e22e">__netdev_start_xmit</span>()
 </span></span><span style="display:flex;"><span>                       ops<span style="color:#f92672">-&gt;</span><span style="color:#a6e22e">ndo_start_xmit</span>()
-</span></span></code></pre></div><p>Eventually, we reach <code>dev_hard_start_xmit()</code> in the control flow which invokes the driver implementation of ndo_start_xmit callback.</p>
-<p>If you inspect this call chain, one thing stands out: <strong>none</strong> of these functions enforce TX flow control themselves. This is by design. This part is left to the drivers.</p>
-<p><code>dev_hard_start_xmit()</code> just pushes the packets it receives, one at a time, to the lower layers and checks if the TX flow has been stopped. If so, it doesn&rsquo;t push any more packets.</p>
-<p>The actual TX flow happens in the driver specific callback <code>ndo_start_xmit()</code>. In addition to processing and transmitting TX, the callback is responsible
-for TX flow control which depends on device capabilities and the current hardware state. This TX flow is done by using the following functions:</p>
+</span></span></code></pre></div><p>Eventually, we reach <code>dev_hard_start_xmit()</code>, which invokes the driver&rsquo;s implementation of <code>ndo_start_xmit</code> callback.</p>
+<p>If you inspect this call chain, one thing stands out: <strong>none</strong> of these functions enforce TX flow control themselves.</p>
+<p>This is by design. That responsibility is left to the drivers.</p>
+<p><code>dev_hard_start_xmit()</code> just pushes the packets one at a time to the lower layers and checks whether the TX queue has been stopped. If it has been stopped, it doesn’t push any more packets.</p>
+<p>The actual TX work happens in the driver-specific <code>ndo_start_xmit()</code> callback. In addition to processing and transmitting packets, this callback is responsible for TX flow control, which depends on device capabilities and hardware state. TX flow control is implemented using:</p>
 <ul>
 <li>
 <p><code>netif_stop_queue(dev)</code> – tells the core to stop sending new packets / stops the TX queue</p>
@@ -302,23 +370,26 @@ for TX flow control which depends on device capabilities and the current hardwar
 </span></span><span style="display:flex;"><span>                                    <span style="color:#a6e22e">usb_submit_urb</span>();                                    <span style="color:#f92672">&lt;--</span> Warning
 </span></span><span style="display:flex;"><span>	URB Completion
 </span></span></code></pre></div><p>With this in mind, the fix is removing those <em>disruptive</em> calls from the set_rx_mode callback. This is what I did and it fixed the bug.</p>
+<p>After you fix the bug locally, you should mail it to the bot that reported it to verify your patch on Google&rsquo;s syzbot instance. This is what that looks like:</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/syzkaller_mail.png"></p>
 <h1 id="mailing-the-patch">Mailing the patch<a hidden class="anchor" aria-hidden="true" href="#mailing-the-patch">#</a></h1>
 <h2 id="an-expected-beginning">An Expected Beginning<a hidden class="anchor" aria-hidden="true" href="#an-expected-beginning">#</a></h2>
 <p>Solving the bug is just one part of the picture; the patch should withstand scrutiny from maintainers and reviewers. <a href="https://lore.kernel.org/netdev/20250920045059.48400-1-viswanathiyyappan@gmail.com/">Here</a>&rsquo;s the v1 I submitted</p>
-<p>I expected a response in about a week or so considering how slow kernel development is. To my (pleasant) surprise, it was 8 hrs. This made me learn that net is actually a <em>very fast moving</em> subsystem. The response was</p>
+<p>I expected a response in about a week or so considering how slow kernel development is. To my (pleasant) surprise, it took 8 hrs. This made me realize that net is actually a <em>very fast moving</em> subsystem.</p>
+<p>The response was</p>
 <p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/reply.png"></p>
 <p>Yikes, That&rsquo;s something I forgot to take into account. Thankfully the <code>Network Devices, the Kernel, and You!</code> page clarifies this</p>
 <p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/rx_mode_sync.png"></p>
-<p>The rx mode synchronization is handled entirely by <code>netif_addr_lock()</code>. I replied with this explanation and Andrew accepted it and told me to incorporate
+<p>The RX mode synchronization is handled entirely by <code>netif_addr_lock()</code>. I replied with this explanation and Andrew accepted it and asked me to incorporate
 this into the commit message in v2. <a href="https://lore.kernel.org/netdev/20250920181852.18164-1-viswanathiyyappan@gmail.com/#t">Here</a>&rsquo;s the v2.</p>
 <h2 id="an-unexpected-development">An Unexpected Development<a hidden class="anchor" aria-hidden="true" href="#an-unexpected-development">#</a></h2>
-<p>I was expecting comments on my patch. What I was not expecting was <a href="https://lore.kernel.org/netdev/20250922180742.6ef6e2d5@kernel.org/">this</a>.</p>
+<p>I was expecting comments on my patch. What I was <strong>not</strong> expecting was <a href="https://lore.kernel.org/netdev/20250922180742.6ef6e2d5@kernel.org/">this</a>.</p>
 <p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/delete.png"></p>
-<p>I forgot to mention this driver is from the pre Git era. This is probably a reasonable response for a driver for a legacy device that was supposed to be done 20 years ago.</p>
-<p>Panicking a bit, I prepared and mailed a patch to delete the driver <a href="https://lore.kernel.org/netdev/20250923164916.5b8c7c28@kernel.org/">here</a>. This broke
-build and thankfully, I did not have to correct it.</p>
+<p>I forgot to mention (or perhaps it was obvious from the title): this driver is from the <code>pre Git</code> era. This is probably a reasonable response for a legacy driver targeting a device that was supposed to be obsolete 20 years ago.</p>
+<p>Panicking a bit, I prepared and mailed a patch to delete the driver, linked <a href="https://lore.kernel.org/netdev/20250923164916.5b8c7c28@kernel.org/">here</a>.
+This broke build, and thankfully, I didn’t have to fix it.</p>
 <h2 id="testing">Testing<a hidden class="anchor" aria-hidden="true" href="#testing">#</a></h2>
-<p>Turns out, Testing with syzkaller was insufficient, which explains Jakub&rsquo;s response. Thankfully, Michal Pecio had a rtl8150 and volunteered to test the patch.</p>
+<p>Turns out, testing with syzkaller was insufficient, which explains Jakub&rsquo;s response. Thankfully, Michal Pecio had a rtl8150 and volunteered to test the patch.</p>
 <p>He triggered the bug by running:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># This is instantly triggered on HW simply by running:</span>
 </span></span><span style="display:flex;"><span>
@@ -339,17 +410,20 @@ build and thankfully, I did not have to correct it.</p>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">netif_stop_queue</span>();
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">usb_submit_urb</span>(dev<span style="color:#f92672">-&gt;</span>tx_urb); <span style="color:#75715e">//	&lt;-- double submission
 </span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
-</span></span></code></pre></div><p>and that my patch stopped the bug from triggering.</p>
-<p>Taking all these into account, I submitted v3 <a href="https://lore.kernel.org/netdev/20250924134350.264597-1-viswanathiyyappan@gmail.com/">here</a></p>
-<p>I got an ACK from Petko Manolov, the maintainer of this driver, after everything settled down.</p>
-<p>v3 got applied into netdev/net.git (main) and eventually ended up in mainline.</p>
-<p>The commit is 958baf5eaee3 (&ldquo;net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast&rdquo;)</p>
+</span></span></code></pre></div><p>He also confirmed that my patch prevented the bug from triggering.</p>
+<p>Taking this into account, I submitted v3 <a href="https://lore.kernel.org/netdev/20250924134350.264597-1-viswanathiyyappan@gmail.com/">here</a></p>
+<p>Petko Manolov, the maintainer of this driver, ok&rsquo;ed my change after everything settled down.</p>
+<p>v3 got applied into <code>netdev/net.git (main)</code> and eventually ended up in mainline.</p>
+<p>The commit is <code>958baf5eaee3</code>(&ldquo;net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast&rdquo;). You can find the metadata for this patch
+<a href="https://github.com/CraftyChimera/linux-kernel-patches/blob/main/patches/2-bug_fixes/rtl8150-netif-wake-race-fix.md">here</a>.</p>
 <h1 id="closing-remarks">Closing Remarks<a hidden class="anchor" aria-hidden="true" href="#closing-remarks">#</a></h1>
-<p>That was an experience. Afrer all this settled down, I decided to go back and have a look at a <a href="https://lore.kernel.org/netdev/20250923163727.5e97abdb@kernel.org/">reply</a> that seemed interesting to me</p>
+<p>Credits to Michal Pecio <a href="mailto:michal.pecio@gmail.com">michal.pecio@gmail.com</a> for testing this patch and Thanks to Jakub, Andrew and other netdev maintainers for being incredibly professional and helpful.</p>
+<p>That was an experience. After everything settled down, I decided to go back and have a look at a <a href="https://lore.kernel.org/netdev/20250923163727.5e97abdb@kernel.org/">reply</a> that seemed interesting to me</p>
 <p><img alt="Diagram" loading="lazy" src="/posts/linux/syzkaller/rx_mode_refactor.png"></p>
-<p>I am currently working on this at the moment and Jakub seems to be fine with me implementing <a href="https://lore.kernel.org/netdev/20251030192018.28dcd830@kernel.org/">it</a> so far.</p>
+<p>I am currently working on this at the moment and so far, Jakub seems to be fine with me implementing <a href="https://lore.kernel.org/netdev/20251030192018.28dcd830@kernel.org/">it</a>.</p>
 <p>Once again, I would like to reiterate that this was an invaluable experience in debugging, kernel development, and upstream submission.</p>
-<p>Thanks for Reading.</p>
+<p>I know this article isn&rsquo;t the most beginner friendly. For that, I would recommend Javier&rsquo;s <a href="https://hackerbikepacker.com/syzbot">blog</a>, which I found extremely invaluable.</p>
+<p>Thanks for reading.</p>
 
 
   </div>
@@ -363,7 +437,7 @@ build and thankfully, I did not have to correct it.</p>
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="https://craftychimera.github.io/">Portfolio</a></span> · 
+        <span>&copy; 2025 <a href="https://craftychimera.github.io/">I, Viswanath</a></span> · 
 
     <span>
         Powered by

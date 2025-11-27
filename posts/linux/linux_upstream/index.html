@@ -5,18 +5,12 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
-<title>How I Upstreamed My First Linux Kernel Patch | Portfolio</title>
+<title>How I Upstreamed My First Linux Kernel Patch | I, Viswanath</title>
 <meta name="keywords" content="">
-<meta name="description" content="Everything and Everyone wants in on open source these days — maybe you do too.
-This article is my attempt at articulating how I upstreamed my first kernel patch.
-Let’s get started with a bit of background.
-Background
-I was writing a driver for work and I wanted to use i2c_transfer
-in a function to write some data on an I2C bus.
-In brief, that function gets a handle to an I2C bus and executes the commands specified in msgs. Therefore, the struct i2c_msg struct should specify if the command is a read or a write.">
+<meta name="description" content="Up the Stream we go">
 <meta name="author" content="">
 <link rel="canonical" href="https://craftychimera.github.io/posts/linux/linux_upstream/">
-<link crossorigin="anonymous" href="/assets/css/stylesheet.381f2c6843b28da8454ae291f64a45a8b239486456ac64a400ac43b398f8defe.css" integrity="sha256-OB8saEOyjahFSuKR9kpFqLI5SGRWrGSkAKxDs5j43v4=" rel="preload stylesheet" as="style">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.b0b9301770f49c72c41b6279c27b94ff5cbe85fceade5425e75ef5b9a274a0f7.css" integrity="sha256-sLkwF3D0nHLEG2J5wnuU/1y&#43;hfzq3lQl5171uaJ0oPc=" rel="preload stylesheet" as="style">
 <link rel="icon" href="https://craftychimera.github.io/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="https://craftychimera.github.io/favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="https://craftychimera.github.io/favicon-32x32.png">
@@ -39,13 +33,20 @@ In brief, that function gets a handle to an I2C bus and executes the commands sp
         document.querySelector("html").dataset.theme = 'light';
     }
 
-</script><meta property="og:url" content="https://craftychimera.github.io/posts/linux/linux_upstream/">
-  <meta property="og:site_name" content="Portfolio">
+</script>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FHRESGH30H"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FHRESGH30H');
+</script>
+<meta property="og:url" content="https://craftychimera.github.io/posts/linux/linux_upstream/">
+  <meta property="og:site_name" content="I, Viswanath">
   <meta property="og:title" content="How I Upstreamed My First Linux Kernel Patch">
-  <meta property="og:description" content="Everything and Everyone wants in on open source these days — maybe you do too. This article is my attempt at articulating how I upstreamed my first kernel patch.
-Let’s get started with a bit of background.
-Background I was writing a driver for work and I wanted to use i2c_transfer in a function to write some data on an I2C bus.
-In brief, that function gets a handle to an I2C bus and executes the commands specified in msgs. Therefore, the struct i2c_msg struct should specify if the command is a read or a write.">
+  <meta property="og:description" content="Up the Stream we go">
   <meta property="og:locale" content="en-us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="posts">
@@ -53,13 +54,7 @@ In brief, that function gets a handle to an I2C bus and executes the commands sp
     <meta property="article:modified_time" content="2025-11-17T11:50:00+05:30">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="How I Upstreamed My First Linux Kernel Patch">
-<meta name="twitter:description" content="Everything and Everyone wants in on open source these days — maybe you do too.
-This article is my attempt at articulating how I upstreamed my first kernel patch.
-Let’s get started with a bit of background.
-Background
-I was writing a driver for work and I wanted to use i2c_transfer
-in a function to write some data on an I2C bus.
-In brief, that function gets a handle to an I2C bus and executes the commands specified in msgs. Therefore, the struct i2c_msg struct should specify if the command is a read or a write.">
+<meta name="twitter:description" content="Up the Stream we go">
 
 
 <script type="application/ld+json">
@@ -94,7 +89,7 @@ In brief, that function gets a handle to an I2C bus and executes the commands sp
   "@type": "BlogPosting",
   "headline": "How I Upstreamed My First Linux Kernel Patch",
   "name": "How I Upstreamed My First Linux Kernel Patch",
-  "description": "Everything and Everyone wants in on open source these days — maybe you do too. This article is my attempt at articulating how I upstreamed my first kernel patch.\nLet’s get started with a bit of background.\nBackground I was writing a driver for work and I wanted to use i2c_transfer in a function to write some data on an I2C bus.\nIn brief, that function gets a handle to an I2C bus and executes the commands specified in msgs. Therefore, the struct i2c_msg struct should specify if the command is a read or a write.\n",
+  "description": "Up the Stream we go",
   "keywords": [
     
   ],
@@ -109,7 +104,7 @@ In brief, that function gets a handle to an I2C bus and executes the commands sp
   },
   "publisher": {
     "@type": "Organization",
-    "name": "Portfolio",
+    "name": "I, Viswanath",
     "logo": {
       "@type": "ImageObject",
       "url": "https://craftychimera.github.io/favicon.ico"
@@ -122,7 +117,7 @@ In brief, that function gets a handle to an I2C bus and executes the commands sp
     <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="https://craftychimera.github.io/" accesskey="h" title="Portfolio (Alt + H)">Portfolio</a>
+            <a href="https://craftychimera.github.io/" accesskey="h" title="I, Viswanath (Alt + H)">I, Viswanath</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -168,6 +163,9 @@ In brief, that function gets a handle to an I2C bus and executes the commands sp
     <h1 class="post-title entry-hint-parent">
       How I Upstreamed My First Linux Kernel Patch
     </h1>
+    <div class="post-description">
+      Up the Stream we go
+    </div>
     <div class="post-meta"><span title='2025-11-17 11:50:00 +0530 IST'>17/11/2025</span>&nbsp;·&nbsp;<span>8 min</span>&nbsp;·&nbsp;<span>1688 words</span>
 
 </div>
@@ -355,7 +353,7 @@ patches to the relevant maintainers and mailing lists who will review and commen
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="https://craftychimera.github.io/">Portfolio</a></span> · 
+        <span>&copy; 2025 <a href="https://craftychimera.github.io/">I, Viswanath</a></span> · 
 
     <span>
         Powered by

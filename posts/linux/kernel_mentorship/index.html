@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="dark">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Linux Kernel Mentorship Program | I, Viswanath</title>
+<meta name="keywords" content="">
+<meta name="description" content="Mentor is actually a character from Odyssey">
+<meta name="author" content="">
+<link rel="canonical" href="https://craftychimera.github.io/posts/linux/kernel_mentorship/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.5d0959b1d1ffa762dd43d3ccfb27704fb10648af5f3b466ddeefd0aef15af249.css" integrity="sha256-XQlZsdH/p2LdQ9PM&#43;ydwT7EGSK9fO0Zt3u/QrvFa8kk=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://craftychimera.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://craftychimera.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://craftychimera.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://craftychimera.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://craftychimera.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://craftychimera.github.io/posts/linux/kernel_mentorship/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "light") {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FHRESGH30H"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FHRESGH30H');
+</script>
+<meta property="og:url" content="https://craftychimera.github.io/posts/linux/kernel_mentorship/">
+  <meta property="og:site_name" content="I, Viswanath">
+  <meta property="og:title" content="Linux Kernel Mentorship Program">
+  <meta property="og:description" content="Mentor is actually a character from Odyssey">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-12-03T11:50:00+05:30">
+    <meta property="article:modified_time" content="2025-12-03T11:50:00+05:30">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linux Kernel Mentorship Program">
+<meta name="twitter:description" content="Mentor is actually a character from Odyssey">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://craftychimera.github.io/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Linux",
+      "item": "https://craftychimera.github.io/posts/linux/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "Linux Kernel Mentorship Program",
+      "item": "https://craftychimera.github.io/posts/linux/kernel_mentorship/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Linux Kernel Mentorship Program",
+  "name": "Linux Kernel Mentorship Program",
+  "description": "Mentor is actually a character from Odyssey",
+  "keywords": [
+    
+  ],
+  "articleBody": "Background Inroduction I learnt about the Linux Kernel Mentorship program from a good friend of mine, Shiv Karthik. At that point, I had just upstreamed my first patch, which took me 6 months.\nI did not want this to be the case for every single kernel patch I submitted (especially the simple ones), so I decided to try my chances at the Linux Kernel Mentorship program.\nIf you just want to look at my patches, click here\nThe main challenges I faced when trying to contribute to the kernel were:\nNot knowing what I could contribute Not knowing where to start reading the kernel code Lack of understanding of mailing list etiquette I am aware these are very common challenges. And thankfully, the mentorship exists to resolve them.\nI would highly recommend becoming familiar with C before starting the mentorship — you don’t want that to be your bottleneck.\nGetting Started The prerequisite tasks are very effective at what they aim to achieve. If you do them, you should have the basics of kernel development down.\nFrom the prereq tasks, I learnt three very important things:\nCreating a proper patch suitable for mailing to the mailing lists Compiling the linux kernel and understanding what the artifacts do Using decode_stacktrace.sh Apart from this, I learnt about syzkaller and decided to focus on syzkaller bugs during my mentorship. Two patches I submitted during this period were accepted.\nStructure of the mentorship: Our mentors were initially Shuah Khan and David Hunter. We later got a new mentor, Khalid Aziz, because the batch size was unusually large this fall at 74 people.\nThe main media of communication were discord and e-mail. Apart from this, we had a Zoom meeting (Office Hours) every Wednesday at 8:00 AM MST. This is where we could discuss our queries with our mentors. These were very helpful.\nOur mentors also reviewed and corrected mistakes in our patches on LKML, which was incredibly helpful.\nOur goal was to get five non-spelling/grammar patches in. Those didn’t count, as they are easy to find and do not improve your understanding of the kernel.\nMy patches We were asked to pick two subsystems and I decided to go with net and mm. I learnt a little too late that I was not ready for mm, although net turned out to be just the right level of complexity for me.\nHere are my commits on mainline, i.e., patches that have been upstreamed.\ngit log --author=\"I Viswanath\" --since=“2019-01-01” --pretty --format=oneline 8d93ff40d49d70e05c82a74beae31f883fe0eaf8 net: usb: lan78xx: fix use of improperly initialized dev-\u003echipid in lan78xx_reset e9f35294e18da82162004a2f35976e7031aaf7f9 ptp: Add a upper bound on max_vclocks 958baf5eaee394e5fd976979b0791a875f14a179 net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast 59ccb8176bd7e826d47962e891b460284f6978f0 i2c: mux: Simplify boolean assignment in i2c_mux_alloc 79dfed097680084f3d4716fa2c5bc945233bd2c0 selftests/mm: use calloc instead of malloc in pagemap_ioctl.c c3ff7f06c7876bc292cac1c7d4df3d0bfd74f3b7 i2c: Clarify behavior of I2C_M_RD flag You can check all my patches with all the relevant metadata here.\nNet patches I decided to focus on net because it suited my skill level. I found all these bugs by going through the net subsystem page in syzkaller.\n1. net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast I started with an absolute monster of a bug which I have described here in excruciating detail. In brief,\nI added prints inside suspicious functions (netif_start_queue, netif_stop_queue and netif_wakeup_queue) and obtained the following log:\nBased on the log statements, I was eventually able to come up (with the help of people from netdev) with the following root cause:\n// syzbot reported WARNING in rtl8150_start_xmit/usb_submit_urb. // This happened because of the following sequence of events: rtl8150_start_xmit() { netif_stop_queue(); usb_submit_urb(dev-\u003etx_urb); } rtl8150_set_multicast() { netif_stop_queue(); netif_wake_queue(); // wakes up TX queue before URB is done } rtl8150_start_xmit() { netif_stop_queue(); usb_submit_urb(dev-\u003etx_urb); // double submission } // rtl8150_set_multicast() should not be concerned with TX queue synchronization, as it's a ndo_set_rx_mode callback. The core issue is that waking the TX queue too early allows start_xmit() to run again before the previous URB completes, causing a double submission.\nrtl8150_set_multicast() had no reason to call TX queue synchronization functions, i.e., netif_stop_queue() and netif_wake_queue(). The solution was therefore to remove them from rtl8150_set_mulitcast().\n2. ptp: Add a upper bound on max_vclocks My second patch was thankfully much simpler. syzbot reported WARNING in max_vclocks_store. I looked at the code and came up with the hypothesis that the bug happened because max is too large for kcalloc here\nI validated this by crafting the following command to trigger the bug:\necho x \u003e /sys/devices/virtual/ptp/ptp0/max_vclocks # where x \u003e KMALLOC_MAX_SIZE/(sizeof(int)) which computes to 1048576 on my system My first attempt tried to fix this by adding validation in mm/slub.h. The mm reviewers pointed out that this was not the right place, so I moved the validation up into the caller, max_vclocks_store().\nThis is where I also learnt that RFC tags are not meant for normal bug-fix patches. In netdev, marking a patch RFC moves it out of the maintainers’ queue entirely. It is meant only for feature patches that are still being discussed. This patch was certainly not that.\nHere’s the final accepted patch\n3. net: usb: lan78xx: fix use of improperly initialized dev-\u003echipid in lan78xx_reset I discovered this bug while investigating a syzbot report.\nWhile reading through the code, I noticed that dev-\u003echipid was being used in lan78xx_read_raw_eeprom() before it was initialized. At the time, I thought this was the bug syzkaller found, but the report had no reproducer, so I couldn’t test it.\nInterestingly, this was a separate bug unrelated to the actual syzkaller report. The syzkaller bug itself was solved by a fellow mentee, Bhanu Seshu Kumar Valluri.\nI validated the existence of this bug by using the reproducer meant for the syzkaller bug and identifying that dev-\u003echipid was always 0 at the point of use.\nHere’s the root cause:\n// dev-\u003echipid is used in lan78xx_init_mac_address before it's initialized: lan78xx_reset() { lan78xx_init_mac_address() lan78xx_read_eeprom() lan78xx_read_raw_eeprom() // \u003c- dev-\u003echipid is used here dev-\u003echipid = ... // \u003c- dev-\u003echipid is initialized correctly here } This was a weird bug because KMSAN would have never detected it — alloc_etherdev() zero-initializes dev-\u003echipid (using the GFP_ZERO flag).\nThe fix was just swapping the order of operations. Here’s the patch.\nnet: Split ndo_set_rx_mode into snapshot and deferred write (In Progress): I spent a considerable amount of time trying to understand this particular reply.\nI have managed to come up with something that looks like it could work but I need to smooth out all the edges and fix all the possible regressions. When I do, I plan to document the process in detail. This is where decode_stacktrace really shines.\nMisc Patches Here are the other patches I submitted that don’t require as much detail:\n4. i2c: Clarify behavior of I2C_M_RD flag I have covered this here and this is the patch that motivated me to join this program.\nI2C_M_RD documentation was incomplete and I decided to clarify how to specify a write transaction. Here is the final patch.\n5. selftests/mm: use calloc instead of malloc in pagemap_ioctl.c I found this while reading through deprecated.rst. I replaced malloc with calloc in pagemap_ioctl.c selftest for good measure.\n6. i2c: mux: Simplify boolean assignment in i2c_mux_alloc I found this when grokking through i2c code for patch opportunities. This patch simplifies boolean assignments of the form if (a) b = true; into the more compact expression b = !!a;\nBugs I chose not to attempt: 1. WARNING in kcm_write_msgs I thought I understood the issue but the bug was not consistently reproducible. I would recommend not to work on bugs like this, at least as a beginner.\nHere’s the link.\n2. KASAN: slab-use-after-free Read in handle_tx (2) This is a bug where I understand the issue but I’m not sure there’s a good way to fix it. Considering the driver is Orphaned, I decided that it was not worth the effort.\nHere’s the link.\nAdvice for Future Applicants If you aren’t familiar with C, get comfortable with it. This should be relevant even when you are working with Rust in the kernel.\nGet used to the linux compilation process. That will allow you to iterate fast and get stuck on the actual bug instead of on the compilation.\nTry to create a minimal reproducer (could be as simple as a bash command) for your bug. This wil help you truly understand and eventually solve the bug.\nIf you have any idea for a bug, just try writing/coding it down. Even a stupid idea can help you find the correct one.\nThe kernel maintainers are very approachable people. If you do everything to the best of your abilities and be honest with it, they will guide you. Conversely, intellectual laziness is not tolerated.\nRemember that kernel maintainers are still humans at the end of the day. Here’s a very relevant video\nWhen you are submitting a patch, try to think like a reviewer/maintainer.\nClosing Remarks This mentorship was an amazing experience and I am glad to have been a part of it. I will be working on my net refactor patch, continue contributing bug fixes to net and am thinking of maybe jumping into virtualization because that seems interesting to me.\nI am very thankful to Shuah Khan, David Hunter and Khalid Aziz for hosting this program.\n",
+  "wordCount" : "1531",
+  "inLanguage": "en",
+  "datePublished": "2025-12-03T11:50:00+05:30",
+  "dateModified": "2025-12-03T11:50:00+05:30",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://craftychimera.github.io/posts/linux/kernel_mentorship/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "I, Viswanath",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://craftychimera.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://craftychimera.github.io/" accesskey="h" title="I, Viswanath (Alt + H)">I, Viswanath</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://craftychimera.github.io/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://craftychimera.github.io/about" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://craftychimera.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://craftychimera.github.io/posts/">Posts</a>&nbsp;»&nbsp;<a href="https://craftychimera.github.io/posts/linux/">Linux</a></div>
+    <h1 class="post-title entry-hint-parent">
+      Linux Kernel Mentorship Program
+    </h1>
+    <div class="post-description">
+      Mentor is actually a character from Odyssey
+    </div>
+    <div class="post-meta"><span title='2025-12-03 11:50:00 +0530 IST'>03/12/2025</span>&nbsp;·&nbsp;<span>8 min</span>&nbsp;·&nbsp;<span>1531 words</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#background" aria-label="Background">Background</a><ul>
+                        
+                <li>
+                    <a href="#inroduction" aria-label="Inroduction">Inroduction</a></li>
+                <li>
+                    <a href="#getting-started" aria-label="Getting Started">Getting Started</a></li>
+                <li>
+                    <a href="#structure-of-the-mentorship" aria-label="Structure of the mentorship:">Structure of the mentorship:</a></li></ul>
+                </li>
+                <li>
+                    <a href="#my-patches" aria-label="My patches">My patches</a><ul>
+                        
+                <li>
+                    <a href="#net-patches" aria-label="Net patches">Net patches</a><ul>
+                        
+                <li>
+                    <a href="#1-net-usb-remove-disruptive-netif_wake_queue-in-rtl8150_set_multicast" aria-label="1. net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast">1. net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast</a></li>
+                <li>
+                    <a href="#2-ptp-add-a-upper-bound-on-max_vclocks" aria-label="2. ptp: Add a upper bound on max_vclocks">2. ptp: Add a upper bound on max_vclocks</a></li>
+                <li>
+                    <a href="#3-net-usb-lan78xx-fix-use-of-improperly-initialized-dev-chipid-in-lan78xx_reset" aria-label="3. net: usb: lan78xx: fix use of improperly initialized dev-&gt;chipid in lan78xx_reset">3. net: usb: lan78xx: fix use of improperly initialized dev-&gt;chipid in lan78xx_reset</a></li>
+                <li>
+                    <a href="#net-split-ndo_set_rx_mode-into-snapshot-and-deferred-write-in-progress" aria-label="net: Split ndo_set_rx_mode into snapshot and deferred write (In Progress):">net: Split ndo_set_rx_mode into snapshot and deferred write (In Progress):</a></li></ul>
+                </li>
+                <li>
+                    <a href="#misc-patches" aria-label="Misc Patches">Misc Patches</a><ul>
+                        
+                <li>
+                    <a href="#4--i2c-clarify-behavior-of-i2c_m_rd-flag" aria-label="4.  i2c: Clarify behavior of I2C_M_RD flag">4.  i2c: Clarify behavior of I2C_M_RD flag</a></li>
+                <li>
+                    <a href="#5-selftestsmm-use-calloc-instead-of-malloc-in-pagemap_ioctlc" aria-label="5. selftests/mm: use calloc instead of malloc in pagemap_ioctl.c">5. selftests/mm: use calloc instead of malloc in pagemap_ioctl.c</a></li>
+                <li>
+                    <a href="#6-i2c-mux-simplify-boolean-assignment-in-i2c_mux_alloc" aria-label="6. i2c: mux: Simplify boolean assignment in i2c_mux_alloc">6. i2c: mux: Simplify boolean assignment in i2c_mux_alloc</a></li></ul>
+                </li></ul>
+                </li>
+                <li>
+                    <a href="#bugs-i-chose-not-to-attempt" aria-label="Bugs I chose not to attempt:">Bugs I chose not to attempt:</a><ul>
+                        <ul>
+                        
+                <li>
+                    <a href="#1-warning-in-kcm_write_msgs" aria-label="1. WARNING in kcm_write_msgs">1. WARNING in kcm_write_msgs</a></li>
+                <li>
+                    <a href="#2--kasan-slab-use-after-free-read-in-handle_tx-2" aria-label="2.  KASAN: slab-use-after-free Read in handle_tx (2)">2.  KASAN: slab-use-after-free Read in handle_tx (2)</a></li></ul>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#advice-for-future-applicants" aria-label="Advice for Future Applicants">Advice for Future Applicants</a></li>
+                <li>
+                    <a href="#closing-remarks" aria-label="Closing Remarks">Closing Remarks</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="background">Background<a hidden class="anchor" aria-hidden="true" href="#background">#</a></h1>
+<h2 id="inroduction">Inroduction<a hidden class="anchor" aria-hidden="true" href="#inroduction">#</a></h2>
+<p>I learnt about the Linux Kernel Mentorship program from a good friend of mine, Shiv Karthik. At that point, I had just upstreamed
+my first patch, which took me 6 months.</p>
+<p>I did not want this to be the case for every single kernel patch I submitted (especially the simple ones), so I decided to try my chances at the Linux Kernel Mentorship program.</p>
+<p>If you just want to look at my patches, click <a href="#my-patches">here</a></p>
+<p>The main challenges I faced when trying to contribute to the kernel were:</p>
+<ul>
+<li>Not knowing what I could contribute</li>
+<li>Not knowing where to start reading the kernel code</li>
+<li>Lack of understanding of mailing list etiquette</li>
+</ul>
+<p>I am aware these are very common challenges. And thankfully, the mentorship exists to resolve them.</p>
+<p>I would highly recommend becoming familiar with C before starting the mentorship — you don&rsquo;t want <em>that</em> to be your bottleneck.</p>
+<h2 id="getting-started">Getting Started<a hidden class="anchor" aria-hidden="true" href="#getting-started">#</a></h2>
+<p>The prerequisite tasks are very effective at what they aim to achieve. If you do them, you should have the basics of kernel development down.</p>
+<p>From the prereq tasks, I learnt three very important things:</p>
+<ul>
+<li>Creating a proper patch suitable for mailing to the mailing lists</li>
+<li>Compiling the linux kernel and understanding what the artifacts do</li>
+<li>Using <code>decode_stacktrace.sh</code></li>
+</ul>
+<p>Apart from this, I learnt about syzkaller and decided to focus on syzkaller bugs during my mentorship. Two patches I submitted during this period were accepted.</p>
+<h2 id="structure-of-the-mentorship">Structure of the mentorship:<a hidden class="anchor" aria-hidden="true" href="#structure-of-the-mentorship">#</a></h2>
+<p>Our mentors were initially Shuah Khan and David Hunter. We later got a new mentor, Khalid Aziz, because the batch size was unusually large this fall at 74 people.</p>
+<p>The main media of communication were discord and e-mail. Apart from this, we had a Zoom meeting (Office Hours) every Wednesday at 8:00 AM MST. This is where we could discuss our queries with our mentors. These were very helpful.</p>
+<p>Our mentors also reviewed and corrected mistakes in our patches on LKML, which was incredibly helpful.</p>
+<p>Our goal was to get five non-spelling/grammar patches in. Those didn&rsquo;t count, as they are easy to find and do not improve your understanding of the kernel.</p>
+<h1 id="my-patches">My patches<a hidden class="anchor" aria-hidden="true" href="#my-patches">#</a></h1>
+<p>We were asked to pick two subsystems and I decided to go with <em>net</em> and <em>mm</em>. I learnt a little too late that I was not ready for <em>mm</em>, although net turned out to be just the right level of complexity for me.</p>
+<p>Here are my commits on mainline, i.e., patches that have been upstreamed.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git log --author<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;I Viswanath&#34;</span> --since<span style="color:#f92672">=</span>“2019-01-01” --pretty --format<span style="color:#f92672">=</span>oneline
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>8d93ff40d49d70e05c82a74beae31f883fe0eaf8 net: usb: lan78xx: fix use of improperly initialized dev-&gt;chipid in lan78xx_reset
+</span></span><span style="display:flex;"><span>e9f35294e18da82162004a2f35976e7031aaf7f9 ptp: Add a upper bound on max_vclocks
+</span></span><span style="display:flex;"><span>958baf5eaee394e5fd976979b0791a875f14a179 net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast
+</span></span><span style="display:flex;"><span>59ccb8176bd7e826d47962e891b460284f6978f0 i2c: mux: Simplify boolean assignment in i2c_mux_alloc
+</span></span><span style="display:flex;"><span>79dfed097680084f3d4716fa2c5bc945233bd2c0 selftests/mm: use calloc instead of malloc in pagemap_ioctl.c
+</span></span><span style="display:flex;"><span>c3ff7f06c7876bc292cac1c7d4df3d0bfd74f3b7 i2c: Clarify behavior of I2C_M_RD flag
+</span></span></code></pre></div><p>You can check all my patches with all the relevant metadata <a href="https://github.com/CraftyChimera/linux-kernel-patches/tree/main/patches">here</a>.</p>
+<h2 id="net-patches">Net patches<a hidden class="anchor" aria-hidden="true" href="#net-patches">#</a></h2>
+<p>I decided to focus on net because it suited my skill level. I found all these bugs by going through the net subsystem page in syzkaller.</p>
+<h3 id="1-net-usb-remove-disruptive-netif_wake_queue-in-rtl8150_set_multicast">1. net: usb: Remove disruptive netif_wake_queue in rtl8150_set_multicast<a hidden class="anchor" aria-hidden="true" href="#1-net-usb-remove-disruptive-netif_wake_queue-in-rtl8150_set_multicast">#</a></h3>
+<p>I started with an absolute monster of a bug which I have described <a href="../syzkaller/index.html">here</a> in excruciating detail. In brief,</p>
+<p>I added prints inside suspicious functions (<code>netif_start_queue</code>, <code>netif_stop_queue</code> and <code>netif_wakeup_queue</code>) and obtained the following log:</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/kernel_mentorship/logs.png"></p>
+<p>Based on the log statements, I was eventually able to come up (with the help of people from netdev) with the following root cause:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">// syzbot reported WARNING in rtl8150_start_xmit/usb_submit_urb.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// This happened because of the following sequence of events:
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">rtl8150_start_xmit</span>() {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">netif_stop_queue</span>();
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">usb_submit_urb</span>(dev<span style="color:#f92672">-&gt;</span>tx_urb);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">rtl8150_set_multicast</span>() {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">netif_stop_queue</span>();
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">netif_wake_queue</span>();             <span style="color:#75715e">// wakes up TX queue before URB is done
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">rtl8150_start_xmit</span>() {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">netif_stop_queue</span>();
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">usb_submit_urb</span>(dev<span style="color:#f92672">-&gt;</span>tx_urb);    <span style="color:#75715e">// double submission
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// rtl8150_set_multicast() should not be concerned with TX queue synchronization, as it&#39;s a ndo_set_rx_mode callback.
+</span></span></span></code></pre></div><p>The core issue is that waking the TX queue too early allows start_xmit() to run again before the previous URB completes, causing a double submission.</p>
+<p><code>rtl8150_set_multicast()</code> had no reason to call TX queue synchronization functions, i.e., <code>netif_stop_queue()</code> and <code>netif_wake_queue()</code>. The solution was therefore to remove them from <code>rtl8150_set_mulitcast()</code>.</p>
+<h3 id="2-ptp-add-a-upper-bound-on-max_vclocks">2. ptp: Add a upper bound on max_vclocks<a hidden class="anchor" aria-hidden="true" href="#2-ptp-add-a-upper-bound-on-max_vclocks">#</a></h3>
+<p>My second patch was thankfully much simpler. syzbot reported <a href="https://syzkaller.appspot.com/bug?extid=94d20db923b9f51be0df">WARNING in max_vclocks_store</a>. I looked at the code and came up with the hypothesis that the bug happened because <code>max</code> is too large for <code>kcalloc</code> here</p>
+<p><img alt="diagram" loading="lazy" src="/posts/linux/kernel_mentorship/calloc.png"></p>
+<p>I validated this by crafting the following command to trigger the bug:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>echo x &gt; /sys/devices/virtual/ptp/ptp0/max_vclocks <span style="color:#75715e"># where x &gt; KMALLOC_MAX_SIZE/(sizeof(int)) which computes to 1048576 on my system</span>
+</span></span></code></pre></div><p>My <a href="https://lore.kernel.org/all/20250922170357.148588-1-viswanathiyyappan@gmail.com/T/">first attempt</a> tried to fix this by adding validation in mm/slub.h. The mm reviewers pointed out that this was not the right place, so I moved the validation up into the caller, <code>max_vclocks_store()</code>.</p>
+<p>This is where I also learnt that RFC tags are not meant for normal bug-fix patches. In <a href="https://docs.kernel.org/process/maintainer-netdev.html#patch-status">netdev</a>, marking a patch RFC moves it out of the maintainers’ queue entirely. It is meant only for feature patches that are still being discussed. This <a href="https://lore.kernel.org/all/20250923160622.8096-1-viswanathiyyappan@gmail.com/T/">patch</a> was certainly not that.</p>
+<p>Here&rsquo;s the final accepted <a href="https://lore.kernel.org/all/20250925155908.5034-1-viswanathiyyappan@gmail.com/T/">patch</a></p>
+<h3 id="3-net-usb-lan78xx-fix-use-of-improperly-initialized-dev-chipid-in-lan78xx_reset">3. net: usb: lan78xx: fix use of improperly initialized dev-&gt;chipid in lan78xx_reset<a hidden class="anchor" aria-hidden="true" href="#3-net-usb-lan78xx-fix-use-of-improperly-initialized-dev-chipid-in-lan78xx_reset">#</a></h3>
+<p>I discovered this bug while investigating a <a href="https://syzkaller.appspot.com/bug?extid=62ec8226f01cb4ca19d9">syzbot report</a>.</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/kernel_mentorship/uninit.png"></p>
+<p>While reading through the code, I noticed that <code>dev-&gt;chipid</code> was being used in <code>lan78xx_read_raw_eeprom()</code> before it was initialized. At the time, I thought this was the bug syzkaller found, but the report had no reproducer, so I couldn’t test it.</p>
+<p>Interestingly, this was a separate bug unrelated to the actual syzkaller report. The syzkaller bug itself was solved by a fellow mentee, Bhanu Seshu Kumar Valluri.</p>
+<p>I validated the existence of this bug by using the reproducer meant for the syzkaller bug and identifying that dev-&gt;chipid was always 0 at the point of use.</p>
+<p>Here&rsquo;s the root cause:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">// dev-&gt;chipid is used in lan78xx_init_mac_address before it&#39;s initialized:
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">lan78xx_reset</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">lan78xx_init_mac_address</span>()
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">lan78xx_read_eeprom</span>()
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">lan78xx_read_raw_eeprom</span>() <span style="color:#75715e">// &lt;- dev-&gt;chipid is used here
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>dev<span style="color:#f92672">-&gt;</span>chipid <span style="color:#f92672">=</span> ... <span style="color:#75715e">// &lt;- dev-&gt;chipid is initialized correctly here
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span></code></pre></div><p>This was a weird bug because KMSAN would have never detected it — <code>alloc_etherdev()</code> zero-initializes dev-&gt;chipid (using the GFP_ZERO flag).</p>
+<p>The fix was just swapping the order of operations. Here&rsquo;s the <a href="https://lore.kernel.org/all/20251013181648.35153-1-viswanathiyyappan@gmail.com/">patch</a>.</p>
+<h3 id="net-split-ndo_set_rx_mode-into-snapshot-and-deferred-write-in-progress">net: Split ndo_set_rx_mode into snapshot and deferred write (In Progress):<a hidden class="anchor" aria-hidden="true" href="#net-split-ndo_set_rx_mode-into-snapshot-and-deferred-write-in-progress">#</a></h3>
+<p>I spent a considerable amount of time trying to understand this particular <a href="https://lore.kernel.org/all/20250923163727.5e97abdb@kernel.org/">reply</a>.</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/kernel_mentorship/refactor.png"></p>
+<p>I have managed to come up with <a href="https://lore.kernel.org/netdev/20251120141354.355059-1-viswanathiyyappan@gmail.com/">something</a> that looks like it could work but I need to smooth out all the edges and fix all the possible regressions. When I do, I plan to document the process in detail. This is where decode_stacktrace really shines.</p>
+<h2 id="misc-patches">Misc Patches<a hidden class="anchor" aria-hidden="true" href="#misc-patches">#</a></h2>
+<p>Here are the other patches I submitted that don&rsquo;t require as much detail:</p>
+<h3 id="4--i2c-clarify-behavior-of-i2c_m_rd-flag">4.  i2c: Clarify behavior of I2C_M_RD flag<a hidden class="anchor" aria-hidden="true" href="#4--i2c-clarify-behavior-of-i2c_m_rd-flag">#</a></h3>
+<p>I have covered this <a href="../linux_upstream/index.html">here</a> and this is the patch that motivated me to join this program.</p>
+<p>I2C_M_RD documentation was incomplete and I decided to clarify how to specify a write transaction. <a href="https://lore.kernel.org/all/20250709151402.7811-2-viswanathiyyappan@gmail.com/">Here</a> is the final patch.</p>
+<h3 id="5-selftestsmm-use-calloc-instead-of-malloc-in-pagemap_ioctlc">5. selftests/mm: use calloc instead of malloc in pagemap_ioctl.c<a hidden class="anchor" aria-hidden="true" href="#5-selftestsmm-use-calloc-instead-of-malloc-in-pagemap_ioctlc">#</a></h3>
+<p>I found this while reading through <a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/process/deprecated.rst">deprecated.rst</a>. I replaced malloc with calloc in pagemap_ioctl.c selftest for good measure.</p>
+<h3 id="6-i2c-mux-simplify-boolean-assignment-in-i2c_mux_alloc">6. i2c: mux: Simplify boolean assignment in i2c_mux_alloc<a hidden class="anchor" aria-hidden="true" href="#6-i2c-mux-simplify-boolean-assignment-in-i2c_mux_alloc">#</a></h3>
+<p>I found this when grokking through i2c code for patch opportunities. This patch simplifies boolean assignments of the form <code>if (a) b = true;</code> into the more compact expression <code>b = !!a;</code></p>
+<h1 id="bugs-i-chose-not-to-attempt">Bugs I chose not to attempt:<a hidden class="anchor" aria-hidden="true" href="#bugs-i-chose-not-to-attempt">#</a></h1>
+<h3 id="1-warning-in-kcm_write_msgs">1. WARNING in kcm_write_msgs<a hidden class="anchor" aria-hidden="true" href="#1-warning-in-kcm_write_msgs">#</a></h3>
+<p>I thought I understood the issue but the bug was not consistently reproducible. I would recommend not to work on bugs like this, at least as a beginner.</p>
+<p>Here&rsquo;s the <a href="https://syzkaller.appspot.com./bug?extid=52624bdfbf2746d37d70">link</a>.</p>
+<h3 id="2--kasan-slab-use-after-free-read-in-handle_tx-2">2.  KASAN: slab-use-after-free Read in handle_tx (2)<a hidden class="anchor" aria-hidden="true" href="#2--kasan-slab-use-after-free-read-in-handle_tx-2">#</a></h3>
+<p>This is a bug where I understand the issue but I&rsquo;m not sure there&rsquo;s a good way to fix it. Considering the driver is Orphaned, I decided that it was not worth the effort.</p>
+<p>Here&rsquo;s the <a href="https://syzkaller.appspot.com./bug?extid=827272712bd6d12c79a4">link</a>.</p>
+<h1 id="advice-for-future-applicants">Advice for Future Applicants<a hidden class="anchor" aria-hidden="true" href="#advice-for-future-applicants">#</a></h1>
+<ul>
+<li>
+<p>If you aren&rsquo;t familiar with C, get comfortable with it. This should be relevant even when you are working with Rust in the kernel.</p>
+</li>
+<li>
+<p>Get used to the linux compilation process. That will allow you to iterate fast and get stuck on the actual bug instead of on the compilation.</p>
+</li>
+<li>
+<p>Try to create a minimal reproducer (could be as simple as a bash command) for your bug. This wil help you truly understand and eventually solve the bug.</p>
+</li>
+<li>
+<p>If you have any idea for a bug, just try writing/coding it down. Even a stupid idea can help you find the correct one.</p>
+</li>
+<li>
+<p>The kernel maintainers are very approachable people. If you do everything to the best of your abilities and be honest with it, they will guide you. Conversely, intellectual laziness is not tolerated.</p>
+</li>
+<li>
+<p>Remember that kernel maintainers are still humans at the end of the day. Here&rsquo;s a very relevant <a href="https://www.youtube.com/watch?v=7i_D42HGh7g">video</a></p>
+</li>
+<li>
+<p>When you are submitting a patch, try to think like a reviewer/maintainer.</p>
+</li>
+</ul>
+<h1 id="closing-remarks">Closing Remarks<a hidden class="anchor" aria-hidden="true" href="#closing-remarks">#</a></h1>
+<p>This mentorship was an amazing experience and I am glad to have been a part of it. I will be working on my net refactor patch, continue contributing bug fixes to net and am thinking of maybe jumping into virtualization because that seems interesting to me.</p>
+<p>I am very thankful to Shuah Khan, David Hunter and Khalid Aziz for hosting this program.</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://craftychimera.github.io/">I, Viswanath</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

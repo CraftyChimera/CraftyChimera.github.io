@@ -6,8 +6,15 @@
     <description>Recent content on I, Viswanath</description>
     <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 20 Nov 2025 14:45:35 +0530</lastBuildDate>
+    <lastBuildDate>Wed, 03 Dec 2025 11:50:00 +0530</lastBuildDate>
     <atom:link href="https://craftychimera.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Linux Kernel Mentorship Program</title>
+      <link>https://craftychimera.github.io/posts/linux/kernel_mentorship/</link>
+      <pubDate>Wed, 03 Dec 2025 11:50:00 +0530</pubDate>
+      <guid>https://craftychimera.github.io/posts/linux/kernel_mentorship/</guid>
+      <description>Mentor is actually a character from Odyssey</description>
+    </item>
     <item>
       <title>Fixing a Syzkaller Bug in an Ancient Driver</title>
       <link>https://craftychimera.github.io/posts/linux/syzkaller/</link>

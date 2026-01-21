@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="dark">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Linux | I, Viswanath</title>
+<meta name="keywords" content="">
+<meta name="description" content="Articles related to Linux and kernel development">
+<meta name="author" content="">
+<link rel="canonical" href="https://craftychimera.github.io/posts/linux/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.38f9ac406f469e81c33ff8b324d5d56d5e652583d04a65936649734df7c91b27.css" integrity="sha256-OPmsQG9GnoHDP/izJNXVbV5lJYPQSmWTZklzTffJGyc=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://craftychimera.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://craftychimera.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://craftychimera.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://craftychimera.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://craftychimera.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" type="application/rss+xml" href="https://craftychimera.github.io/posts/linux/index.xml" title="rss">
+<link rel="alternate" hreflang="en" href="https://craftychimera.github.io/posts/linux/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "light") {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FHRESGH30H"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FHRESGH30H');
+</script>
+<meta property="og:url" content="https://craftychimera.github.io/posts/linux/">
+  <meta property="og:site_name" content="I, Viswanath">
+  <meta property="og:title" content="Linux">
+  <meta property="og:description" content="Articles related to Linux and kernel development">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linux">
+<meta name="twitter:description" content="Articles related to Linux and kernel development">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://craftychimera.github.io/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Linux",
+      "item": "https://craftychimera.github.io/posts/linux/"
+    }
+  ]
+}
+</script>
+</head>
+<body class="list" id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://craftychimera.github.io/" accesskey="h" title="I, Viswanath (Alt + H)">I, Viswanath</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://craftychimera.github.io/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://craftychimera.github.io/about" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main"> 
+<header class="page-header"><div class="breadcrumbs"><a href="https://craftychimera.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://craftychimera.github.io/posts/">Posts</a></div>
+  <h1>
+    Linux
+  </h1>
+  <div class="post-description">
+    Articles related to Linux and kernel development
+  </div>
+</header>
+
+<article class="post-entry"> 
+  <header class="entry-header">
+    <h2 class="entry-hint-parent">Rethinking RX Mode config in the Linux Kernel
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>As I mentioned in my last article, I found this particular reply intriguing and decided to work on it.
+This series will document my thought process as I work on that idea.
+If you just want to look at the latest version of the patch, you can use the lore url linked here.
+As of the time of writing this article, the patch series is at v8.
+The Problem I found the original message very dense. This section is about breaking it down into digestible chunks.
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2026-01-18 14:45:35 +0530 IST'>18/01/2026</span>&nbsp;·&nbsp;<span>9 min</span>&nbsp;·&nbsp;<span>1771 words</span></footer>
+  <a class="entry-link" aria-label="post link to Rethinking RX Mode config in the Linux Kernel" href="https://craftychimera.github.io/posts/linux/netdev_refactor/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
+    <h2 class="entry-hint-parent">Linux Kernel Mentorship Program
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>Background Inroduction I learnt about the Linux Kernel Mentorship program from a good friend of mine, Shiv Karthik. At that point, I had just upstreamed my first patch, which took me 6 months.
+I did not want this to be the case for every single kernel patch I submitted (especially the simple ones), so I decided to try my chances at the Linux Kernel Mentorship program.
+If you just want to look at my patches, click here
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2025-12-03 11:50:00 +0530 IST'>03/12/2025</span>&nbsp;·&nbsp;<span>8 min</span>&nbsp;·&nbsp;<span>1531 words</span></footer>
+  <a class="entry-link" aria-label="post link to Linux Kernel Mentorship Program" href="https://craftychimera.github.io/posts/linux/kernel_mentorship/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
+    <h2 class="entry-hint-parent">Fixing a Syzkaller Bug in an Ancient Driver
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>Introduction As a participant of the Linux Kernel Mentorship (Fall) program, I was incentivized to find and fix kernel bugs reported by Google’s kernel fuzzer, syzkaller.
+I picked net as one of my subsystems and decided to tackle the first bug I saw on the syzkaller dashboard. This naturally turned out to be a async-race monster.
+The silver lining was that this forced me to learn a lot about the networking stack and a refactoring opportunity in net/core.
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2025-11-20 14:45:35 +0530 IST'>20/11/2025</span>&nbsp;·&nbsp;<span>11 min</span>&nbsp;·&nbsp;<span>2160 words</span></footer>
+  <a class="entry-link" aria-label="post link to Fixing a Syzkaller Bug in an Ancient Driver" href="https://craftychimera.github.io/posts/linux/syzkaller/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
+    <h2 class="entry-hint-parent">How I Upstreamed My First Linux Kernel Patch
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>Everything and Everyone wants in on open source these days — maybe you do too. This article is my attempt at articulating how I upstreamed my first kernel patch.
+Let’s get started with a bit of background.
+Background I was writing a driver for work and I wanted to use i2c_transfer in a function to write some data on an I2C bus.
+In brief, that function gets a handle to an I2C bus and executes the commands specified in msgs. Therefore, the struct i2c_msg struct should specify if the command is a read or a write.
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2025-11-17 11:50:00 +0530 IST'>17/11/2025</span>&nbsp;·&nbsp;<span>8 min</span>&nbsp;·&nbsp;<span>1688 words</span></footer>
+  <a class="entry-link" aria-label="post link to How I Upstreamed My First Linux Kernel Patch" href="https://craftychimera.github.io/posts/linux/linux_upstream/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
+    <h2 class="entry-hint-parent">A Basic Introduction to Git
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>If you have ever dreaded ‘breaking the build,’ Git is the safety net you never knew you needed — or another version control system (VCS), but this article is written with Git in mind.
+While many Git tutorials exist, I try to do something a bit different - so I hope this article offers a fresh perspective. It may not be intuitive why version control systems are important, so let’s start with that.
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2025-09-10 11:46:57 +0530 IST'>10/09/2025</span>&nbsp;·&nbsp;<span>8 min</span>&nbsp;·&nbsp;<span>1626 words</span></footer>
+  <a class="entry-link" aria-label="post link to A Basic Introduction to Git" href="https://craftychimera.github.io/posts/linux/git_basics/"></a>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="https://craftychimera.github.io/">I, Viswanath</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

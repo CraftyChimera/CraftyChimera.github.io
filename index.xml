@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>I, Viswanath</title>
+    <link>https://craftychimera.github.io/</link>
+    <description>Recent content on I, Viswanath</description>
+    <generator>Hugo -- 0.152.2</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 18 Jan 2026 14:45:35 +0530</lastBuildDate>
+    <atom:link href="https://craftychimera.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Rethinking RX Mode config in the Linux Kernel</title>
+      <link>https://craftychimera.github.io/posts/linux/netdev_refactor/</link>
+      <pubDate>Sun, 18 Jan 2026 14:45:35 +0530</pubDate>
+      <guid>https://craftychimera.github.io/posts/linux/netdev_refactor/</guid>
+      <description>Refactoring set_rx_mode part I</description>
+    </item>
+    <item>
+      <title>Linux Kernel Mentorship Program</title>
+      <link>https://craftychimera.github.io/posts/linux/kernel_mentorship/</link>
+      <pubDate>Wed, 03 Dec 2025 11:50:00 +0530</pubDate>
+      <guid>https://craftychimera.github.io/posts/linux/kernel_mentorship/</guid>
+      <description>Mentor is actually a character from Odyssey</description>
+    </item>
+    <item>
+      <title>Fixing a Syzkaller Bug in an Ancient Driver</title>
+      <link>https://craftychimera.github.io/posts/linux/syzkaller/</link>
+      <pubDate>Thu, 20 Nov 2025 14:45:35 +0530</pubDate>
+      <guid>https://craftychimera.github.io/posts/linux/syzkaller/</guid>
+      <description>Ancient Bug</description>
+    </item>
+    <item>
+      <title>How I Upstreamed My First Linux Kernel Patch</title>
+      <link>https://craftychimera.github.io/posts/linux/linux_upstream/</link>
+      <pubDate>Mon, 17 Nov 2025 11:50:00 +0530</pubDate>
+      <guid>https://craftychimera.github.io/posts/linux/linux_upstream/</guid>
+      <description>Up the Stream we go</description>
+    </item>
+    <item>
+      <title>A Basic Introduction to Git</title>
+      <link>https://craftychimera.github.io/posts/linux/git_basics/</link>
+      <pubDate>Wed, 10 Sep 2025 11:46:57 +0530</pubDate>
+      <guid>https://craftychimera.github.io/posts/linux/git_basics/</guid>
+      <description>Git Gud</description>
+    </item>
+  </channel>
+</rss>

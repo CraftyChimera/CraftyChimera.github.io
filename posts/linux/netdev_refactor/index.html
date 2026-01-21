@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="dark">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Rethinking RX Mode config in the Linux Kernel | I, Viswanath</title>
+<meta name="keywords" content="">
+<meta name="description" content="Refactoring set_rx_mode part I">
+<meta name="author" content="">
+<link rel="canonical" href="https://craftychimera.github.io/posts/linux/netdev_refactor/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.38f9ac406f469e81c33ff8b324d5d56d5e652583d04a65936649734df7c91b27.css" integrity="sha256-OPmsQG9GnoHDP/izJNXVbV5lJYPQSmWTZklzTffJGyc=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://craftychimera.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://craftychimera.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://craftychimera.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://craftychimera.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://craftychimera.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://craftychimera.github.io/posts/linux/netdev_refactor/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "light") {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FHRESGH30H"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FHRESGH30H');
+</script>
+<meta property="og:url" content="https://craftychimera.github.io/posts/linux/netdev_refactor/">
+  <meta property="og:site_name" content="I, Viswanath">
+  <meta property="og:title" content="Rethinking RX Mode config in the Linux Kernel">
+  <meta property="og:description" content="Refactoring set_rx_mode part I">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-01-18T14:45:35+05:30">
+    <meta property="article:modified_time" content="2026-01-18T14:45:35+05:30">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Rethinking RX Mode config in the Linux Kernel">
+<meta name="twitter:description" content="Refactoring set_rx_mode part I">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://craftychimera.github.io/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Linux",
+      "item": "https://craftychimera.github.io/posts/linux/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "Rethinking RX Mode config in the Linux Kernel",
+      "item": "https://craftychimera.github.io/posts/linux/netdev_refactor/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Rethinking RX Mode config in the Linux Kernel",
+  "name": "Rethinking RX Mode config in the Linux Kernel",
+  "description": "Refactoring set_rx_mode part I",
+  "keywords": [
+    
+  ],
+  "articleBody": "As I mentioned in my last article, I found this particular reply intriguing and decided to work on it.\nThis series will document my thought process as I work on that idea.\nIf you just want to look at the latest version of the patch, you can use the lore url linked here.\nAs of the time of writing this article, the patch series is at v8.\nThe Problem I found the original message very dense. This section is about breaking it down into digestible chunks.\nRX filtering, i.e., dropping RX from untrusted sources is a core requirement of network devices. dev_set_rx_mode() is the abstraction in net/core that is responsible for programming RX filters, i.e., informing the hardware what sources to accept from.\nThis filtering happens at the MAC layer and is very different from firewalls or netfilter processing which happen after the frames have already been accepted.\nNaturally, part of this programming is device specific. That’s implemented as the ndo_set_rx_mode callback which is eventually invoked by dev_set_rx_mode().\nThe code looks something like:\nvoid __dev_set_rx_mode(struct net_device *dev) { const struct net_device_ops *ops = dev-\u003enetdev_ops; /* Validation here */ if (ops-\u003endo_set_rx_mode) ops-\u003endo_set_rx_mode(dev); } void dev_set_rx_mode(struct net_device *dev) { netif_addr_lock_bh(dev); __dev_set_rx_mode(dev); netif_addr_unlock_bh(dev); } where netif_addr_lock_bh() and netif_addr_unlock_bh() lock and unlock the spinlock dev-\u003eaddr_list_lock which is needed to synchronize access to unicast/multicast address lists.\nHowever, this means the I/O involved is performed while holding a spinlock — which is problematic because I/O would want to sleep. Drivers have tried to work around this limitation in a few ways.\nSome drivers make the I/O asynchronous, like the rtl8150 driver mentioned in the reply. This is a naive solution: it can lead to accumulating I/O requests faster than they can be executed. Obsolete backlogs are useless, as only the latest request matters.\nA smarter approach is to perform the actual I/O in a work item, with the set_rx_mode callback simply scheduling the work. This prevents backlogs: scheduling the work either does nothing if it hasn’t started yet or reschedules it if it’s already running, ensuring nothing is missed. This works but then this puts a lot of strain on the reviewers since this is a lot of work to do per driver.\nThe correct solution (as suggested in the reply) is to build on this idea.\nWe don’t want to access the shared data during the I/O, as we are removing the spin lock. The best approach is to take a snapshot of the RX mode config when dev_set_rx_mode() is invoked. We then use this snapshot to confirm the rx mode request and perform the I/O.\nWith this understanding, here is my first attempt at implementing this idea.\nPrerequisites Honestly, I had a hard time figuring out where to start. From the reply, it was clear that workqueues are paramount. So let’s start there.\nWorkqueues: Since I did not know what workqueues were, It was time to read the docs.\nIn brief,\na work item is a wrapper around a function that is to be executed later. This function is called a work handler. Workqueues are queues of work items An independent thread (called the worker) serves as the execution context for the functions described by the work items. While there are work items on the workqueue the worker executes the functions associated with the work items one after the other. functions executing in the workqueue context can sleep That helps but that doesn’t explain how we can use it. This is where driver code becomes useful.\nI decided that the lan78xx driver would be a good starting point since that used a work item in the ndo_set_rx_mode callback.\nBy tracing the usages of set_multicast (the work item) in the driver code, I deduced that the correct steps for using the workqueue API are:\n1) Define a struct work_item x 2) Call INIT_WORK(\u0026x, fun) to initialize x with the function fun. fun is now the work handler for x 3) Call schedule_work(\u0026x) to queue the work on the global workqueue (and hence actually run it) 4) Cancel the work using cancel_work_sync(\u0026x) when you want to cancel fun`s execution We could define and use a dedicated workqueue but as of now the global workqueue seems good enough for this refactor.\nNetwork Device Operations and the Core/Driver split I haven’t yet explained what a NDO is, so this section fills that gap.\nEvery mechanism in the networking stack that interacts with hardware is split into two parts: generic logic and device-specific logic.\nThe generic part is implemented in net/core and defines the mechanism. This code is shared across all network devices. The device-specific part is implemented by the corresponding drivers as callbacks. These callbacks define how the mechanism is carried out on a particular device. These callbacks are grouped together in a structure called struct net_device_ops. The generic logic invokes the appropriate callback when it needs the device-specific logic.\nFor example, consider the driver rtl8150.\nstatic const struct net_device_ops rtl8150_netdev_ops = { .ndo_open\t= rtl8150_open, .ndo_stop\t= rtl8150_close, .ndo_siocdevprivate\t= rtl8150_siocdevprivate, .ndo_start_xmit\t= rtl8150_start_xmit, .ndo_tx_timeout\t= rtl8150_tx_timeout, .ndo_set_rx_mode\t= rtl8150_set_multicast, .ndo_set_mac_address\t= rtl8150_set_mac_address, .ndo_validate_addr\t= eth_validate_addr, }; This net_device_ops structure is assigned to a struct net_device dev as:\ndev-\u003enetdev_ops = \u0026rtl8150_netdev_ops; Later, when dev_set_rx_mode() is called on the same dev, it eventually invokes the ndo_set_rx_mode callback:\nif (ops-\u003endo_set_rx_mode) ops-\u003endo_set_rx_mode(dev); For this particular network device, dev-\u003enetdev_ops-\u003endo_set_rx_mode points to rtl8150_set_multicast. In other words, the above call is effectively equivalent to:\nrtl8150_set_multicast(dev); In short, the generic dev_set_rx_mode() code effectively calls the driver’s rtl8150_set_multicast() function for this device.\nDesign V1 Well, the start is still difficult. Let’s start with things we do know:\nThere is a new work item There has to be a new NDO The Work I decided to name the new work item config_write. (The names get better in later versions.)\nIncorporating the new NDO to this model was not straightforward to say the least. My first thought was have the NDO be the work handler.\nThat didn’t look good for a couple of reasons. Most importantly, the signature would be completely wrong for a work item. A function executed by a work item must have this form:\nvoid (name)(struct work_struct *work); Hmm, What if we define a function of this signature and call our new NDO inside it? This allows the work handler to perform validation or extra logic without changing the NDO itself. I decided to name this execute_write_rx_config()\nThe Snapshot Next, I had to decide what the snapshot should look like. The thing I came up with was a massive blunder but is still worth describing.\nSince the config represents data to be written to hardware registers, it can be represented as a bounded char array (finite registers, finite size). Because the size depends on the driver, this array should live in the driver’s private data.\nAs to how this will be used:\nThe config will be populated by the set_rx_mode NDO The config will be written to the hardware by the write_rx_config NDO To support this, I added two macros: update_snapshot and read_snapshot along with a spin lock config_lock for synchronization. These will be used like this:\nupdate_snapshot will be called at end of the set_rx_mode callback and read_snapshot will be called at the beginning of the write_rx_config callback I then added a wrapper struct rx_config_work and included a member rx_work of this type in struct net_device:\nstruct rx_config_work { struct work_struct config_write; struct net_device *dev; spinlock_t config_lock; }; The pointer to dev is necessary to reference the enclosing net_device. This is a very common kernel pattern.\nThe flow looks something like this:\n// in alloc_netdev_mqs() INIT_WORK(\u0026dev-\u003erx_work-\u003econfig_write, execute_write_rx_config); // in dev_set_rx_mode() schedule_work(\u0026dev-\u003erx_work-\u003econfig_write); // in free_netdev() cancel_work_sync(\u0026dev-\u003erx_work-\u003econfig_write); This design was implemented in v1, v2 (was supposed to fix the build errors in v1 but wasn’t even a valid patch series) and v3 (which fixed that and added an RFT tag).\nPost-mortem of V1 Why this aged like milk I dropped the ball pretty hard :/\nJakub’s response points out the biggest problem with this approach.\nIn short, implementing V1 would have been extremely complex and error-prone — it’s a lot of work to decide what should go into the config for each driver.\nThis design was just bad. However, the fact that Jakub took the time to respond meaningfully suggested that something could be salvaged.\nSalvaging V1 The work part was pretty solid and it was the snapshot part that was the problem. That’s what needed fixing.\nWith that in mind, I came up with this idea for what the config should look like\nstruct netif_rx_config { char *uc_addrs; // of size uc_count * dev-\u003eaddr_len char *mc_addrs; // of size mc_count * dev-\u003eaddr_len int uc_count; int mc_count; bool multi_en, promisc_en, vlan_en; void *device_specific_config; } And this pseudocode for update_config() and read_config()\natomic_t cfg_in_use = ATOMIC_INIT(false); atomic_t cfg_update_pending = ATOMIC_INIT(false); struct netif_rx_config *active, *staged; void update_config() { int was_config_pending = atomic_xchg(\u0026cfg_update_pending, false); // If prepare_config fails, it leaves staged untouched // So, we check for and apply if pending update int rc = prepare_config(\u0026staged); if (rc \u0026\u0026 !was_config_pending) return; if (atomic_read(\u0026cfg_in_use)) { atomic_set(\u0026cfg_update_pending, true); return; } swap(active, staged); } void read_config() { atomic_set(\u0026cfg_in_use, true); do_io(active); atomic_set(\u0026cfg_in_use, false); // To account for the edge case where update_config() is called // during the execution of read_config() and there are no subsequent // calls to update_config() if (atomic_xchg(\u0026cfg_update_pending, false)) swap(active, staged); } The idea is still to update the snapshot in the set_rx_mode callback and consume it in the write_rx_config callback. What’s new is the explicit config prep step and more structure in general.\nupdate_config prepares a new snapshot and publishes it only if the current snapshot is not being consumed by read_config.\nThis was unnecessarily complicated and Jakub helped me simplify it\nHere’s the simplified version:\n// These variables will be part of dev-\u003enetif_rx_config_ctx in the final code bool pending_cfg_ready = false; struct netif_rx_config *ready, *pending; void update_config() { WARN_ONCE(!spin_is_locked(\u0026dev-\u003eaddr_list_lock), \"netif_update_rx_config() called without netif_addr_lock_bh()\\n\"); int rc = netif_prepare_rx_config(\u0026pending); if (rc) return; pending_cfg_ready = true; } void read_config() { // We could introduce a new lock for this but // reusing the addr lock works well enough netif_addr_lock_bh(); // There's no point continuing if the pending config // is not ready if(!pending_cfg_ready) { netif_addr_unlock_bh(); return; } swap(ready, pending); pending_cfg_ready = false; netif_addr_unlock_bh(); do_io(ready); } I decided to base Design V2 on this simplified pseudocode. I will explain the psuedocode there.\nClosing Thoughts Design V1 failed because it was too theoretical and didn’t anticipate emergent complexity. The review process made this clear and helped steer the design in a more practical direction.\nIn Part 2, I will cover Design V2, along with the associated lifetime and memory-management concerns.\nThanks for reading.\n",
+  "wordCount" : "1771",
+  "inLanguage": "en",
+  "datePublished": "2026-01-18T14:45:35+05:30",
+  "dateModified": "2026-01-18T14:45:35+05:30",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://craftychimera.github.io/posts/linux/netdev_refactor/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "I, Viswanath",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://craftychimera.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://craftychimera.github.io/" accesskey="h" title="I, Viswanath (Alt + H)">I, Viswanath</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://craftychimera.github.io/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://craftychimera.github.io/about" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://craftychimera.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://craftychimera.github.io/posts/">Posts</a>&nbsp;»&nbsp;<a href="https://craftychimera.github.io/posts/linux/">Linux</a></div>
+    <h1 class="post-title entry-hint-parent">
+      Rethinking RX Mode config in the Linux Kernel
+    </h1>
+    <div class="post-description">
+      Refactoring set_rx_mode part I
+    </div>
+  
+    <div class="post-subtitle">Part I: Design, Failure, and Recovery</div>
+  
+    <div class="post-meta"><span title='2026-01-18 14:45:35 +0530 IST'>18/01/2026</span>&nbsp;·&nbsp;<span>9 min</span>&nbsp;·&nbsp;<span>1771 words</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#the-problem" aria-label="The Problem">The Problem</a></li>
+                <li>
+                    <a href="#prerequisites" aria-label="Prerequisites">Prerequisites</a><ul>
+                        
+                <li>
+                    <a href="#workqueues" aria-label="Workqueues:">Workqueues:</a></li>
+                <li>
+                    <a href="#network-device-operations-and-the-coredriver-split" aria-label="Network Device Operations and the Core/Driver split">Network Device Operations and the Core/Driver split</a></li></ul>
+                </li>
+                <li>
+                    <a href="#design-v1" aria-label="Design V1">Design V1</a><ul>
+                        
+                <li>
+                    <a href="#the-work" aria-label="The Work">The Work</a></li>
+                <li>
+                    <a href="#the-snapshot" aria-label="The Snapshot">The Snapshot</a></li></ul>
+                </li>
+                <li>
+                    <a href="#post-mortem-of-v1" aria-label="Post-mortem of V1">Post-mortem of V1</a><ul>
+                        
+                <li>
+                    <a href="#why-this-aged-like-milk" aria-label="Why this aged like milk">Why this aged like milk</a></li>
+                <li>
+                    <a href="#salvaging-v1" aria-label="Salvaging V1">Salvaging V1</a></li></ul>
+                </li>
+                <li>
+                    <a href="#closing-thoughts" aria-label="Closing Thoughts">Closing Thoughts</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><p>As I mentioned in my last article, I found this particular <a href="https://lore.kernel.org/all/20250923163727.5e97abdb@kernel.org">reply</a> intriguing and decided to work on it.</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/netdev_refactor/refactor.png"></p>
+<p>This series will document my thought process as I work on that idea.</p>
+<p>If you just want to look at the latest version of the patch, you can use the lore url linked <a href="https://github.com/CraftyChimera/linux-kernel-patches/blob/main/patches/1-features/refactor_set_rx_mode/0-split-set-rx-mode.md">here</a>.</p>
+<p>As of the time of writing this article, the patch series is at v8.</p>
+<h1 id="the-problem">The Problem<a hidden class="anchor" aria-hidden="true" href="#the-problem">#</a></h1>
+<p>I found the original message very dense. This section is about breaking it down into digestible chunks.</p>
+<p>RX filtering, i.e., dropping RX from untrusted sources is a core requirement of network devices. <code>dev_set_rx_mode()</code> is the abstraction in net/core that is responsible for programming RX filters, i.e., informing the hardware what sources to accept from.</p>
+<p>This filtering happens at the MAC layer and is very different from firewalls or netfilter processing which happen after the frames have already been accepted.</p>
+<p>Naturally, part of this programming is device specific. That&rsquo;s implemented as the <code>ndo_set_rx_mode</code> callback which is eventually invoked by <code>dev_set_rx_mode()</code>.</p>
+<p>The code looks something like:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">__dev_set_rx_mode</span>(<span style="color:#66d9ef">struct</span> net_device <span style="color:#f92672">*</span>dev)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">struct</span> net_device_ops <span style="color:#f92672">*</span>ops <span style="color:#f92672">=</span> dev<span style="color:#f92672">-&gt;</span>netdev_ops;
+</span></span><span style="display:flex;"><span>   <span style="color:#75715e">/* Validation here */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (ops<span style="color:#f92672">-&gt;</span>ndo_set_rx_mode)
+</span></span><span style="display:flex;"><span>		ops<span style="color:#f92672">-&gt;</span><span style="color:#a6e22e">ndo_set_rx_mode</span>(dev);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">dev_set_rx_mode</span>(<span style="color:#66d9ef">struct</span> net_device <span style="color:#f92672">*</span>dev)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">netif_addr_lock_bh</span>(dev);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">__dev_set_rx_mode</span>(dev);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">netif_addr_unlock_bh</span>(dev);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>where <code>netif_addr_lock_bh()</code> and <code>netif_addr_unlock_bh()</code> lock and unlock the spinlock <code>dev-&gt;addr_list_lock</code> which is needed to synchronize access to unicast/multicast address lists.</p>
+<p>However, this means the I/O involved is performed while holding a spinlock — which is problematic because I/O would want to sleep. Drivers have tried to work around this limitation in a few ways.</p>
+<p>Some drivers make the I/O asynchronous, like the <code>rtl8150</code> driver mentioned in the reply. This is a naive solution: it can lead to accumulating I/O requests faster than they can be executed. Obsolete backlogs are useless, as only the latest request matters.</p>
+<p>A smarter approach is to perform the actual I/O in a work item, with the set_rx_mode callback simply scheduling the work. This prevents backlogs: scheduling the work either does nothing if it hasn’t started yet or reschedules it if it’s already running, ensuring nothing is missed.
+This works but then this puts a lot of strain on the reviewers since this is a lot of work to do per driver.</p>
+<p>The correct solution (as suggested in the reply) is to build on this idea.</p>
+<p>We don&rsquo;t want to access the shared data during the I/O, as we are removing the spin lock. The best approach is to take a snapshot of the RX mode config when <code>dev_set_rx_mode()</code> is invoked. We then use this snapshot to confirm the rx mode request and perform the I/O.</p>
+<p>With this understanding, here is my first attempt at implementing this idea.</p>
+<h1 id="prerequisites">Prerequisites<a hidden class="anchor" aria-hidden="true" href="#prerequisites">#</a></h1>
+<p>Honestly, I had a hard time figuring out where to start. From the reply, it was clear that workqueues are paramount. So let’s start there.</p>
+<h2 id="workqueues">Workqueues:<a hidden class="anchor" aria-hidden="true" href="#workqueues">#</a></h2>
+<p>Since I did not know what workqueues were, It was time to read the <a href="https://docs.kernel.org/core-api/workqueue.html">docs</a>.</p>
+<p>In brief,</p>
+<ul>
+<li>a <strong>work item</strong> is a wrapper around a function that is to be executed later. This function is called a <strong>work handler</strong>.</li>
+<li>Workqueues are queues of work items</li>
+<li>An independent thread (called the <strong>worker</strong>) serves as the execution context for the functions described by the work items.</li>
+<li>While there are work items on the workqueue the worker executes the functions associated with the work items one after the other.</li>
+<li>functions executing in the workqueue context <strong>can sleep</strong></li>
+</ul>
+<p>That helps but that doesn&rsquo;t explain how we can use it. This is where driver code becomes useful.</p>
+<p>I decided that the <a href="https://elixir.bootlin.com/linux/latest/source/drivers/net/usb/lan78xx.c">lan78xx driver</a> would be a good starting point since that used a work item in the <code>ndo_set_rx_mode</code> callback.</p>
+<p>By tracing the usages of <code>set_multicast</code> (the work item) in the driver code, I deduced that the correct steps for using the workqueue API are:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>1<span style="color:#f92672">)</span> Define a struct work_item x
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>2<span style="color:#f92672">)</span> Call INIT_WORK<span style="color:#f92672">(</span>&amp;x, fun<span style="color:#f92672">)</span> to initialize x with the 
+</span></span><span style="display:flex;"><span>   <span style="color:#66d9ef">function</span> fun. fun is now the work handler <span style="color:#66d9ef">for</span> x
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>3<span style="color:#f92672">)</span> Call schedule_work<span style="color:#f92672">(</span>&amp;x<span style="color:#f92672">)</span> to queue the work on the global 
+</span></span><span style="display:flex;"><span>   workqueue <span style="color:#f92672">(</span>and hence actually run it<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>4<span style="color:#f92672">)</span> Cancel the work using cancel_work_sync<span style="color:#f92672">(</span>&amp;x<span style="color:#f92672">)</span> 
+</span></span><span style="display:flex;"><span>   when you want to cancel fun<span style="color:#e6db74">`</span>s execution
+</span></span></code></pre></div><p>We could define and use a dedicated workqueue but as of now the <strong>global workqueue</strong> seems good enough for this refactor.</p>
+<h2 id="network-device-operations-and-the-coredriver-split">Network Device Operations and the Core/Driver split<a hidden class="anchor" aria-hidden="true" href="#network-device-operations-and-the-coredriver-split">#</a></h2>
+<p>I haven’t yet explained what a <strong>NDO</strong> is, so this section fills that gap.</p>
+<p>Every mechanism in the networking stack that interacts with hardware is split into two parts: generic logic and device-specific logic.</p>
+<ul>
+<li>The generic part is implemented in net/core and defines the mechanism. This code is shared across all network devices.</li>
+<li>The device-specific part is implemented by the corresponding drivers as callbacks. These callbacks define how the mechanism is carried out on a particular device.</li>
+</ul>
+<p>These callbacks are grouped together in a structure called <code>struct net_device_ops</code>. The generic logic invokes the appropriate callback when it needs the device-specific logic.</p>
+<p>For example, consider the driver <code>rtl8150</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">struct</span> net_device_ops rtl8150_netdev_ops <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>	.ndo_open		<span style="color:#f92672">=</span> rtl8150_open,
+</span></span><span style="display:flex;"><span>	.ndo_stop		<span style="color:#f92672">=</span> rtl8150_close,
+</span></span><span style="display:flex;"><span>	.ndo_siocdevprivate	<span style="color:#f92672">=</span> rtl8150_siocdevprivate,
+</span></span><span style="display:flex;"><span>	.ndo_start_xmit		<span style="color:#f92672">=</span> rtl8150_start_xmit,
+</span></span><span style="display:flex;"><span>	.ndo_tx_timeout		<span style="color:#f92672">=</span> rtl8150_tx_timeout,
+</span></span><span style="display:flex;"><span>	.ndo_set_rx_mode	<span style="color:#f92672">=</span> rtl8150_set_multicast,
+</span></span><span style="display:flex;"><span>	.ndo_set_mac_address	<span style="color:#f92672">=</span> rtl8150_set_mac_address,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	.ndo_validate_addr	<span style="color:#f92672">=</span> eth_validate_addr,
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>This <code>net_device_ops</code> structure is assigned to a <code>struct net_device dev</code> as:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>	dev<span style="color:#f92672">-&gt;</span>netdev_ops <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>rtl8150_netdev_ops;
+</span></span></code></pre></div><p>Later, when <code>dev_set_rx_mode()</code> is called on the same dev,
+it eventually invokes the <code>ndo_set_rx_mode</code> callback:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (ops<span style="color:#f92672">-&gt;</span>ndo_set_rx_mode)
+</span></span><span style="display:flex;"><span>		ops<span style="color:#f92672">-&gt;</span><span style="color:#a6e22e">ndo_set_rx_mode</span>(dev);
+</span></span></code></pre></div><p>For this particular network device, <code>dev-&gt;netdev_ops-&gt;ndo_set_rx_mode</code> points to <code>rtl8150_set_multicast</code>. In other words, the above call is effectively equivalent to:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#a6e22e">rtl8150_set_multicast</span>(dev);
+</span></span></code></pre></div><p>In short, the generic <code>dev_set_rx_mode()</code> code effectively calls the driver’s <code>rtl8150_set_multicast()</code> function for this device.</p>
+<h1 id="design-v1">Design V1<a hidden class="anchor" aria-hidden="true" href="#design-v1">#</a></h1>
+<p>Well, the start is still difficult. Let&rsquo;s start with things we do know:</p>
+<ul>
+<li>There is a <strong>new work item</strong></li>
+<li>There has to be a <strong>new NDO</strong></li>
+</ul>
+<h2 id="the-work">The Work<a hidden class="anchor" aria-hidden="true" href="#the-work">#</a></h2>
+<p>I decided to name the new work item <code>config_write</code>. (The names get better in later versions.)</p>
+<p>Incorporating the new NDO to this model was not straightforward to say the least. My first thought was have the NDO be the work handler.</p>
+<p>That didn’t look good for a couple of reasons. Most importantly, the signature would be completely wrong for a work item. A function executed by a work item must have this form:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">void</span> (name)(<span style="color:#66d9ef">struct</span> work_struct <span style="color:#f92672">*</span>work);
+</span></span></code></pre></div><p>Hmm, What if we define a function of this signature and call our new NDO inside it? This allows the work handler to perform validation or extra logic without changing the NDO itself. I decided to name this <code>execute_write_rx_config()</code></p>
+<h2 id="the-snapshot">The Snapshot<a hidden class="anchor" aria-hidden="true" href="#the-snapshot">#</a></h2>
+<p>Next, I had to decide what the <strong>snapshot</strong> should look like. The thing I came up with was a massive blunder but is still worth describing.</p>
+<p>Since the config represents data to be written to hardware registers, it can be represented as a bounded char array (finite registers, finite size). Because the size depends on the driver, this array should live in the driver’s private data.</p>
+<p>As to how this will be used:</p>
+<ul>
+<li>The config will be populated by the <code>set_rx_mode</code> NDO</li>
+<li>The config will be written to the hardware by the <code>write_rx_config</code> NDO</li>
+</ul>
+<p>To support this, I added two macros: <code>update_snapshot</code> and <code>read_snapshot</code> along with a spin lock <code>config_lock</code> for synchronization. These will be used like this:</p>
+<ul>
+<li><code>update_snapshot</code> will be called at end of the <code>set_rx_mode</code> callback and</li>
+<li><code>read_snapshot</code> will be called at the beginning of the <code>write_rx_config</code> callback</li>
+</ul>
+<p>I then added a wrapper struct <code>rx_config_work</code> and included a member <code>rx_work</code> of this type in <code>struct net_device</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> rx_config_work {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> work_struct config_write;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> net_device <span style="color:#f92672">*</span>dev;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">spinlock_t</span> config_lock;
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>The pointer to dev is necessary to reference the enclosing <code>net_device</code>. This is a very common kernel pattern.</p>
+<p>The flow looks something like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">// in alloc_netdev_mqs()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">INIT_WORK</span>(<span style="color:#f92672">&amp;</span>dev<span style="color:#f92672">-&gt;</span>rx_work<span style="color:#f92672">-&gt;</span>config_write, execute_write_rx_config);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// in dev_set_rx_mode()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">schedule_work</span>(<span style="color:#f92672">&amp;</span>dev<span style="color:#f92672">-&gt;</span>rx_work<span style="color:#f92672">-&gt;</span>config_write);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// in free_netdev()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">cancel_work_sync</span>(<span style="color:#f92672">&amp;</span>dev<span style="color:#f92672">-&gt;</span>rx_work<span style="color:#f92672">-&gt;</span>config_write);
+</span></span></code></pre></div><p>This design was implemented in <a href="https://lore.kernel.org/netdev/20251020134857.5820-1-viswanathiyyappan@gmail.com/">v1</a>, <a href="https://lore.kernel.org/netdev/20251026175445.1519537-1-viswanathiyyappan@gmail.com/">v2</a> (was supposed to fix the build errors in v1 but wasn&rsquo;t even a valid patch series) and   <a href="https://lore.kernel.org/netdev/20251028174222.1739954-1-viswanathiyyappan@gmail.com/">v3</a> (which fixed that and added an RFT tag).</p>
+<h1 id="post-mortem-of-v1">Post-mortem of V1<a hidden class="anchor" aria-hidden="true" href="#post-mortem-of-v1">#</a></h1>
+<h2 id="why-this-aged-like-milk">Why this aged like milk<a hidden class="anchor" aria-hidden="true" href="#why-this-aged-like-milk">#</a></h2>
+<p>I dropped the ball pretty hard :/</p>
+<p>Jakub&rsquo;s response points out the biggest problem with this approach.</p>
+<p><img alt="Diagram" loading="lazy" src="/posts/linux/netdev_refactor/response.png"></p>
+<p>In short, implementing V1 would have been extremely complex and error-prone — it’s a lot of work to decide what should go into the config for each driver.</p>
+<p>This design was just bad. However, the fact that Jakub took the time to respond meaningfully suggested that something could be salvaged.</p>
+<h2 id="salvaging-v1">Salvaging V1<a hidden class="anchor" aria-hidden="true" href="#salvaging-v1">#</a></h2>
+<p><strong>The work part</strong> was pretty solid and it was the snapshot part that was the problem. That&rsquo;s what needed fixing.</p>
+<p>With that in mind, I came up with this idea for what the config should look like</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> netif_rx_config {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>uc_addrs; <span style="color:#75715e">// of size uc_count * dev-&gt;addr_len
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>mc_addrs; <span style="color:#75715e">// of size mc_count * dev-&gt;addr_len
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> uc_count;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> mc_count;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">bool</span> multi_en, promisc_en, vlan_en;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>device_specific_config;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And this pseudocode for <code>update_config()</code> and <code>read_config()</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">atomic_t</span> cfg_in_use <span style="color:#f92672">=</span> <span style="color:#a6e22e">ATOMIC_INIT</span>(false);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">atomic_t</span> cfg_update_pending <span style="color:#f92672">=</span> <span style="color:#a6e22e">ATOMIC_INIT</span>(false);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> netif_rx_config <span style="color:#f92672">*</span>active, <span style="color:#f92672">*</span>staged;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">update_config</span>()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> was_config_pending <span style="color:#f92672">=</span> <span style="color:#a6e22e">atomic_xchg</span>(<span style="color:#f92672">&amp;</span>cfg_update_pending, false);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// If prepare_config fails, it leaves staged untouched
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// So, we check for and apply if pending update
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> rc <span style="color:#f92672">=</span> <span style="color:#a6e22e">prepare_config</span>(<span style="color:#f92672">&amp;</span>staged);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (rc <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>was_config_pending)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">atomic_read</span>(<span style="color:#f92672">&amp;</span>cfg_in_use)) {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">atomic_set</span>(<span style="color:#f92672">&amp;</span>cfg_update_pending, true);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">swap</span>(active, staged);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">read_config</span>()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">atomic_set</span>(<span style="color:#f92672">&amp;</span>cfg_in_use, true);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">do_io</span>(active);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">atomic_set</span>(<span style="color:#f92672">&amp;</span>cfg_in_use, false);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// To account for the edge case where update_config() is called
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// during the execution of read_config() and there are no subsequent
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// calls to update_config()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">atomic_xchg</span>(<span style="color:#f92672">&amp;</span>cfg_update_pending, false))
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">swap</span>(active, staged);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The idea is still to update the snapshot in the <code>set_rx_mode</code> callback and consume it in the <code>write_rx_config</code> callback. What’s new is the explicit config prep step and more structure in general.</p>
+<p><code>update_config</code> prepares a new snapshot and publishes it only if the current snapshot is not being consumed by <code>read_config</code>.</p>
+<p>This was unnecessarily complicated and Jakub helped me simplify it</p>
+<p><img alt="correction" loading="lazy" src="/posts/linux/netdev_refactor/correction.png"></p>
+<p>Here&rsquo;s the simplified version:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">// These variables will be part of dev-&gt;netif_rx_config_ctx in the final code
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">bool</span> pending_cfg_ready <span style="color:#f92672">=</span> false;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> netif_rx_config <span style="color:#f92672">*</span>ready, <span style="color:#f92672">*</span>pending;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">update_config</span>()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WARN_ONCE</span>(<span style="color:#f92672">!</span><span style="color:#a6e22e">spin_is_locked</span>(<span style="color:#f92672">&amp;</span>dev<span style="color:#f92672">-&gt;</span>addr_list_lock),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;netif_update_rx_config() called without netif_addr_lock_bh()</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> rc <span style="color:#f92672">=</span> <span style="color:#a6e22e">netif_prepare_rx_config</span>(<span style="color:#f92672">&amp;</span>pending);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (rc)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    pending_cfg_ready <span style="color:#f92672">=</span> true;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">read_config</span>()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// We could introduce a new lock for this but
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// reusing the addr lock works well enough
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">netif_addr_lock_bh</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// There&#39;s no point continuing if the pending config
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// is not ready
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>pending_cfg_ready) {
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">netif_addr_unlock_bh</span>();
+</span></span><span style="display:flex;"><span>       <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">swap</span>(ready, pending);
+</span></span><span style="display:flex;"><span>    pending_cfg_ready <span style="color:#f92672">=</span> false;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">netif_addr_unlock_bh</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">do_io</span>(ready);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I decided to base Design V2 on this simplified pseudocode. I will explain the psuedocode there.</p>
+<h1 id="closing-thoughts">Closing Thoughts<a hidden class="anchor" aria-hidden="true" href="#closing-thoughts">#</a></h1>
+<p>Design V1 failed because it was too theoretical and didn’t anticipate emergent complexity. The review process made this clear and helped steer the design in a more practical direction.</p>
+<p>In Part 2, I will cover Design V2, along with the associated lifetime and memory-management concerns.</p>
+<p>Thanks for reading.</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="https://craftychimera.github.io/posts/linux/kernel_mentorship/">
+    <span class="title">« Prev</span>
+    <br>
+    <span>Linux Kernel Mentorship Program</span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="https://craftychimera.github.io/">I, Viswanath</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
